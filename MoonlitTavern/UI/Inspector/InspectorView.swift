@@ -24,6 +24,7 @@ struct InspectorView: View {
             }
             .pickerStyle(.segmented)
             .padding(12)
+            .accessibilityIdentifier("inspectorTabs")
 
             ScrollView {
                 Group {
@@ -72,6 +73,7 @@ private struct CharacterPanel: View {
                     HStack {
                         Button("编辑角色") { editing = c }
                             .buttonStyle(.bordered)
+                            .accessibilityIdentifier("editCharacterButton")
                         if c.isSample { SampleBadge() }
                         Spacer()
                         if let book = c.characterBook {

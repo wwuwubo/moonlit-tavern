@@ -117,7 +117,7 @@ struct CharacterEditorView: View {
             .navigationTitle(isNew ? "新建角色" : "编辑角色")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() }.accessibilityIdentifier("editorCancel") }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("保存") { save() }
                         .disabled(draft.name.isBlank)

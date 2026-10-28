@@ -9,12 +9,13 @@ LOGS="$ROOT/logs"
 [[ -d "$LOGS" ]] || { echo "没有 logs 目录"; exit 0; }
 
 # 汇总诊断信息
-if [[ -f "$LOGS/xcodebuild.log" ]]; then
-  grep -E "(: error: |: warning: |error: |BUILD (SUCCEEDED|FAILED)|\*\* )" "$LOGS/xcodebuild.log" | sort -u > "$LOGS/diagnostics.txt" || true
-  grep -E ": error: " "$LOGS/xcodebuild.log" | sort -u | head -30 | while IFS= read -r line; do
+for BUILD_LOG in "$LOGS/xcodebuild.log" "$LOGS/uitest.log"; do
+  [[ -f "$BUILD_LOG" ]] || continue
+  grep -E "(: error: |: warning: |error: |BUILD (SUCCEEDED|FAILED)|TEST (SUCCEEDED|FAILED)|\*\* |Test Case .* (passed|failed)|XCTAssert)" "$BUILD_LOG" | sort -u >> "$LOGS/diagnostics.txt" || true
+  grep -E ": error: " "$BUILD_LOG" | sort -u | head -30 | while IFS= read -r line; do
     echo "::error::${line}"
   done
-fi
+done
 {
   echo "run: ${GITHUB_RUN_NUMBER:-local} (${GITHUB_RUN_ID:-})"
   echo "sha: ${GITHUB_SHA:-}"

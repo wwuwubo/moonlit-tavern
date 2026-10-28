@@ -92,6 +92,28 @@ final class MemoryTests: XCTestCase {
         XCTAssertEqual(r.stateUpdates, ["地点": "王都酒馆", "时间": "深夜"])
     }
 
+    func testExampleEchoIsDropped() {
+        // Qwen3.5-0.8B 在 CI 实测中把参考写法的关系原样抄进了输出
+        let output = """
+        摘要：艾琳打量门口的风铃，递上一杯热麦酒。
+        事件：
+        - 艾琳将一杯热麦酒推至吧台边缘
+        - 旅人交出了一封密信
+        关系：
+        - 艾琳→旅人：从戒备转为信任
+        状态：
+        - 地点=城门口
+        - 时间=深夜
+        """
+        let r = Summarizer.parse(output)
+        XCTAssertEqual(r.events, ["艾琳将一杯热麦酒推至吧台边缘"])
+        XCTAssertTrue(r.relationships.isEmpty)
+        XCTAssertEqual(r.stateUpdates, ["时间": "深夜"])
+        // 提示词里的参考写法确实包含这些片段（两边保持同步）
+        let prompt = Summarizer.prompt(messages: [], previousSummary: nil, characterNames: ["艾琳"], userName: "旅人")[0].content
+        for fragment in Summarizer.exampleFragments { XCTAssertTrue(prompt.contains(fragment), fragment) }
+    }
+
     func testMergeRelationshipsKeepsLatest() {
         var memory = ChatMemory(chatID: UUID())
         let first = Summarizer.memoryItems(from: .init(summary: "s1", events: ["e1"], relationships: [.init(subject: "A", object: "B", state: "陌生")], stateUpdates: [:]), messageIndex: 10)

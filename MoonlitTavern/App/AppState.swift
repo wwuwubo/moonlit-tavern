@@ -83,8 +83,13 @@ final class AppState: ObservableObject {
     }()
 
     init() {
+        let env = ProcessInfo.processInfo.environment
+        // UI 自动化测试：使用一次性的数据目录，从示例数据开始
+        let isUITest = env["MOONLIT_UITEST"] == "1"
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        let root = support.appendingPathComponent("MoonlitTavern", isDirectory: true)
+        let root = isUITest
+            ? FileManager.default.temporaryDirectory.appendingPathComponent("MoonlitTavern-UITest-\(UUID().uuidString)", isDirectory: true)
+            : support.appendingPathComponent("MoonlitTavern", isDirectory: true)
         let opened: TavernStore
         do {
             opened = try TavernStore(root: root)
@@ -94,7 +99,15 @@ final class AppState: ObservableObject {
         }
         let firstLaunch = opened.isFirstLaunch
         store = opened
-        settings = opened.loadSettings()
+        var loadedSettings = opened.loadSettings()
+        if isUITest {
+            if let ctx = env["MOONLIT_CONTEXT"].flatMap(Int.init) { loadedSettings.local.contextLength = ctx }
+            if let n = env["MOONLIT_MAX_TOKENS"].flatMap(Int.init) {
+                loadedSettings.replyLength = .custom
+                loadedSettings.sampling.maxNewTokens = n
+            }
+        }
+        settings = loadedSettings
         characters = store.loadCharacters()
         chats = store.loadChats()
         lorebooks = store.loadLorebooks()

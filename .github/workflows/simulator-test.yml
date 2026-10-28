@@ -1,0 +1,52 @@
+name: Simulator UI Test
+
+# 端到端 UI 测试：iPad 模拟器 + 真实 App + 从源码构建的 llama.cpp（模拟器切片）+ 真实 GGUF 模型。
+# 自动点击界面完成一轮本地角色扮演，并截图。手动触发，避免消耗私有仓库额度。
+# 模拟器上只用 CPU 推理，速度不代表真机。
+
+on:
+  workflow_dispatch:
+    inputs:
+      model_url:
+        description: "GGUF 下载地址（建议用小模型）"
+        required: true
+        default: https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF/resolve/main/Qwen3.5-0.8B-Q4_K_M.gguf
+
+permissions:
+  contents: write
+
+env:
+  LLAMA_TAG: b11960
+
+jobs:
+  uitest:
+    name: iPad 模拟器端到端测试
+    runs-on: xcode-27
+    timeout-minutes: 80
+    steps:
+      - uses: actions/checkout@v5
+      - name: 安装 XcodeGen
+        run: brew install xcodegen
+      - name: 缓存 llama.cpp 模拟器切片
+        uses: actions/cache@v4
+        with:
+          path: build/llama-sim
+          key: llama-sim-${{ env.LLAMA_TAG }}-arm64
+      - name: 缓存模型
+        uses: actions/cache@v4
+        with:
+          path: models/uitest
+          key: uitest-model-${{ inputs.model_url }}
+      - name: 运行端到端测试
+        run: scripts/run-simulator-test.sh "${{ inputs.model_url }}"
+      - name: 导出测试附件
+        if: always()
+        run: |
+          mkdir -p logs/attachments
+          xcrun xcresulttool export attachments --path build/UITest.xcresult --output-path logs/attachments 2>&1 | tail -5 || true
+          ls logs/screenshots logs/attachments 2>/dev/null | head -60 || true
+      - name: 推送日志到 ci-logs 分支
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/publish-logs.sh simulator-uitest

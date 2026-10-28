@@ -25,6 +25,7 @@ struct SettingsView: View {
                     NavigationLink { ModelManagerView() } label: {
                         Label("模型管理", systemImage: "cpu")
                     }
+                    .accessibilityIdentifier("modelManagerLink")
                     NavigationLink { InferenceSettingsView() } label: {
                         Label("推理参数（上下文、KV 缓存、模板）", systemImage: "slider.horizontal.3")
                     }
@@ -67,6 +68,7 @@ struct SettingsView: View {
                         state.flushSettings()
                         dismiss()
                     }
+                    .accessibilityIdentifier("settingsDone")
                 }
             }
         }
@@ -98,6 +100,9 @@ struct ModelManagerView: View {
                     ModelRow(model: model, selected: state.settings.local.selectedModelFile == model.fileName)
                         .contentShape(Rectangle())
                         .onTapGesture { state.selectModel(model) }
+                        .accessibilityElement(children: .combine)
+                        .accessibilityAddTraits(.isButton)
+                        .accessibilityIdentifier("model-row")
                         .swipeActions {
                             Button(role: .destructive) { pendingDelete = model } label: { Label("删除", systemImage: "trash") }
                         }

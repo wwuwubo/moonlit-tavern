@@ -93,7 +93,8 @@ extension AppState {
         let estimate = file.estimate(contextLength: config.contextLength, cacheType: config.kvCacheType)
         EngineLog.shared.append(String(format: "内存估算 %.0f MB（权重 %.0f + KV %.0f + 计算 %.0f + 应用 %.0f），当前可用 %.0f MB",
                                        estimate.totalMB, estimate.weightsMB, estimate.kvCacheMB, estimate.computeMB, estimate.overheadMB, available))
-        if !force, estimate.totalMB > available * 0.95 {
+        // available 为 0 表示系统没有给出上限（例如模拟器），此时不做估算拦截
+        if !force, available > 0, estimate.totalMB > available * 0.95 {
             if let smaller = MemoryPlanner.recommendedContext(
                 fileSizeBytes: file.sizeBytes, shape: file.shape, cacheType: config.kvCacheType, availableMB: available
             ), smaller < config.contextLength {

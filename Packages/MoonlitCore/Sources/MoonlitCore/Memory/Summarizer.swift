@@ -70,17 +70,17 @@ public enum Summarizer {
             guard !line.isEmpty else { continue }
             if let rest = stripLabel(line, labels: ["摘要", "Summary", "总结"]) {
                 section = .summary; sawLabel = true
-                if !rest.isEmpty { summaryLines.append(rest) }
+                if !rest.isEmpty, !isExampleEcho(rest) { summaryLines.append(rest) }
                 continue
             }
             if let rest = stripLabel(line, labels: ["事件", "关键事件", "Events"]) {
                 section = .events; sawLabel = true
-                if !rest.isEmpty, !isNone(rest) { result.events.append(rest) }
+                if !rest.isEmpty, !isNone(rest), !isExampleEcho(rest) { result.events.append(rest) }
                 continue
             }
             if let rest = stripLabel(line, labels: ["关系", "关系变化", "Relationships"]) {
                 section = .relations; sawLabel = true
-                if !rest.isEmpty, !isNone(rest), let rel = parseRelationship(rest) { result.relationships.append(rel) }
+                if !rest.isEmpty, !isNone(rest), !isExampleEcho(rest), let rel = parseRelationship(rest) { result.relationships.append(rel) }
                 continue
             }
             if let rest = stripLabel(line, labels: ["状态", "剧情状态", "State"]) {
@@ -91,6 +91,7 @@ public enum Summarizer {
             let item = stripBullet(line)
             if isNone(item) { continue }
             if item.hasPrefix("出场角色") || item.hasPrefix("参考写法") { continue }
+            if isExampleEcho(item) { continue }
             switch section {
             case .none, .summary: summaryLines.append(item)
             case .events:
@@ -163,6 +164,13 @@ public enum Summarizer {
 
     static func isNone(_ s: String) -> Bool {
         ["无", "无。", "暂无", "none", "None", "N/A", "-"].contains(s.trimmed)
+    }
+
+    /// 参考写法里的虚构内容。小模型有时会原样抄进输出，解析时剔除，避免污染记忆。
+    static let exampleFragments = ["雨夜收留", "北方的战事", "交出了一封密信", "从戒备转为信任", "城门口"]
+
+    static func isExampleEcho(_ text: String) -> Bool {
+        exampleFragments.contains { text.contains($0) }
     }
 
     /// 小模型偶尔会照抄格式说明里的占位词，这些不是剧情信息。

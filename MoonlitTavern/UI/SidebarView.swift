@@ -33,6 +33,7 @@ struct SidebarView: View {
                     ForEach(state.groupChats) { chat in
                         ChatRow(chat: chat)
                             .tag(chat.id)
+                            .accessibilityIdentifier("chat-row-group")
                             .contextMenu { chatMenu(chat) }
                     }
                 }
@@ -63,6 +64,7 @@ struct SidebarView: View {
             ToolbarItem(placement: .topBarLeading) {
                 Button { showSettings = true } label: { Image(systemName: "gearshape") }
                     .accessibilityLabel("设置")
+                    .accessibilityIdentifier("settingsButton")
             }
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {

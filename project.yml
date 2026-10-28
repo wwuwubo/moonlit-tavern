@@ -81,3 +81,20 @@ targets:
         SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
     scheme:
       configVariants: []
+      testTargets:
+        - MoonlitTavernUITests
+
+  # UI 自动化测试（只在模拟器测试流程中构建，不进入 IPA）
+  MoonlitTavernUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: MoonlitTavernUITests
+    dependencies:
+      - target: MoonlitTavern
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.wuwuyou.moonlittavern.uitests
+        TARGETED_DEVICE_FAMILY: "2"
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: MoonlitTavern

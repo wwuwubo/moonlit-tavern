@@ -106,6 +106,7 @@ struct ChatView: View {
                 TextField("以 \(state.persona(for: chat).name) 的身份说点什么…", text: $draft, axis: .vertical)
                     .lineLimit(1...8)
                     .focused($composerFocused)
+                    .accessibilityIdentifier("composer")
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
                     .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Theme.surfaceRaised))
@@ -123,6 +124,7 @@ struct ChatView: View {
                     }
                     .keyboardShortcut(".", modifiers: .command)
                     .accessibilityLabel("停止生成")
+                    .accessibilityIdentifier("stopButton")
                 } else {
                     Button {
                         send(chat: chat)
@@ -136,6 +138,7 @@ struct ChatView: View {
                     .keyboardShortcut(.return, modifiers: .command)
                     .disabled(state.isGenerating)
                     .accessibilityLabel(draft.isBlank ? "让角色继续" : "发送")
+                    .accessibilityIdentifier("sendButton")
                 }
             }
             StatsLine()
@@ -171,6 +174,7 @@ struct ChatView: View {
                 Image(systemName: "sidebar.right")
             }
             .accessibilityLabel("角色与设定面板")
+            .accessibilityIdentifier("inspectorToggle")
         }
     }
 
@@ -234,6 +238,8 @@ struct MessageRow: View {
                     }
                 }
                 MessageContentView(text: message.content, isUser: isUser)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("message-\(message.role.rawValue)")
                     .padding(.horizontal, 14)
                     .padding(.vertical, 11)
                     .background(

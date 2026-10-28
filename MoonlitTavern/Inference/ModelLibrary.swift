@@ -93,6 +93,8 @@ final class ModelLibrary: NSObject, ObservableObject {
     }
 
     let directory: URL
+    /// 仅用于自动化测试：额外扫描的模型目录（由启动环境变量 MOONLIT_EXTRA_MODEL_DIR 指定）。
+    let extraDirectory: URL? = ProcessInfo.processInfo.environment["MOONLIT_EXTRA_MODEL_DIR"].map { URL(fileURLWithPath: $0, isDirectory: true) }
     private var session: URLSession!
     private var taskFileNames: [Int: String] = [:]
 
@@ -124,10 +126,10 @@ final class ModelLibrary: NSObject, ObservableObject {
     /// 扫描目录并读取每个文件的 GGUF 元数据（只读文件头）。
     func refresh() async {
         isScanning = true
-        let dir = directory
+        let dirs = [directory] + (extraDirectory.map { [$0] } ?? [])
         let scanned: [LocalModelFile] = await Task.detached(priority: .userInitiated) {
             let fm = FileManager.default
-            let files = (try? fm.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.fileSizeKey])) ?? []
+            let files = dirs.flatMap { (try? fm.contentsOfDirectory(at: $0, includingPropertiesForKeys: [.fileSizeKey])) ?? [] }
             return files
                 .filter { $0.pathExtension.lowercased() == "gguf" && !$0.lastPathComponent.hasPrefix("mmproj") }
                 .map { ModelLibrary.inspect($0) }

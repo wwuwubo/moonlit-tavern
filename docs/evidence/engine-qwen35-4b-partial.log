@@ -1,0 +1,76 @@
+ggml_metal_device_init: tensor API disabled for pre-M5 and pre-A19 devices
+ggml_metal_library_init: using embedded metal library
+ggml_metal_library_compile_all: compiled 'fa_aux' library in 11.832 sec
+ggml_metal_library_compile_all: compiled 'fa_f16' library in 11.709 sec
+ggml_metal_library_compile_all: compiled 'fa_f32' library in 3.382 sec
+ggml_metal_library_compile_all: compiled 'fa_q4_0' library in 1.259 sec
+ggml_metal_library_compile_all: compiled 'fa_q4_1' library in 12.640 sec
+ggml_metal_library_compile_all: compiled 'fa_q5_0' library in 1.313 sec
+ggml_metal_library_compile_all: compiled 'fa_q5_1' library in 9.388 sec
+ggml_metal_library_compile_all: compiled 'fa_q8_0' library in 3.382 sec
+ggml_metal_library_compile_all: compiled 'fa_tensor' library in 9.388 sec
+ggml_metal_library_compile_all: compiled 'fa_vec_f16' library in 3.382 sec
+ggml_metal_library_compile_all: compiled 'fa_vec_f32' library in 3.382 sec
+ggml_metal_library_compile_all: compiled 'fa_vec_q4_0' library in 11.708 sec
+ggml_metal_library_compile_all: compiled 'fa_vec_q4_1' library in 12.541 sec
+ggml_metal_library_compile_all: compiled 'fa_vec_q5_0' library in 9.381 sec
+ggml_metal_library_compile_all: compiled 'fa_vec_q5_1' library in 7.974 sec
+ggml_metal_library_compile_all: compiled 'fa_vec_q8_0' library in 6.964 sec
+ggml_metal_library_compile_all: compiled 'mul_mv' library in 4.232 sec
+ggml_metal_library_compile_all: compiled 'mul_mv_mma' library in 5.566 sec
+ggml_metal_library_compile_all: compiled 'mul_mm' library in 4.327 sec
+ggml_metal_library_compile_all: compiled 'quantize' library in 4.481 sec
+ggml_metal_library_compile_all: compiled 'softmax' library in 9.381 sec
+ggml_metal_library_compile_all: compiled 'norm' library in 9.381 sec
+ggml_metal_library_compile_all: compiled 'unary' library in 9.381 sec
+ggml_metal_library_compile_all: compiled 'binbcast' library in 9.381 sec
+ggml_metal_library_compile_all: compiled 'reduce' library in 3.376 sec
+ggml_metal_library_compile_all: compiled 'tri' library in 9.381 sec
+ggml_metal_library_compile_all: compiled 'ssm' library in 9.381 sec
+ggml_metal_library_compile_all: compiled 'wkv' library in 9.381 sec
+ggml_metal_library_compile_all: compiled 'gated_delta_net' library in 9.381 sec
+ggml_metal_library_compile_all: compiled 'solve_tri' library in 11.702 sec
+ggml_metal_library_compile_all: compiled 'rope' library in 9.446 sec
+ggml_metal_library_compile_all: compiled 'conv' library in 8.051 sec
+ggml_metal_library_compile_all: compiled 'upscale' library in 11.702 sec
+ggml_metal_library_compile_all: compiled 'argsort' library in 9.381 sec
+ggml_metal_library_compile_all: compiled 'pool' library in 9.401 sec
+ggml_metal_library_compile_all: compiled 'misc' library in 9.381 sec
+ggml_metal_library_compile_all: loaded 36 libraries from embedded data in 12.641 sec (max single = 12.640 sec)
+ggml_metal_rsets_init: creating a residency set collection (keep_alive = 180 s)
+ggml_metal_device_init: GPU name:   MTL0 (Apple Paravirtual device)
+ggml_metal_device_init: GPU family: MTLGPUFamilyApple5  (1005)
+ggml_metal_device_init: simdgroup reduction   = false
+ggml_metal_device_init: simdgroup matrix mul. = false
+ggml_metal_device_init: has unified memory    = true
+ggml_metal_device_init: has bfloat            = false
+ggml_metal_device_init: has tensor            = false
+ggml_metal_device_init: use residency sets    = true
+ggml_metal_device_init: use shared buffers    = true
+ggml_metal_device_init: recommendedMaxWorkingSetSize  = 10021.60 MB
+== 加载模型 Qwen3.5-4B-Q4_K_M.gguf ==
+模型：qwen35 4B Q4_K - Medium，架构 qwen35，参数 4.21B
+上下文 8192（训练 262144），模板 chatml，思考模式 支持
+GPU：Metal，加载耗时 4.20 秒，进程内存 2917 MB
+
+提示词组装：系统 275 tok，世界书 57 tok（激活 世界观：长夜、地点：钟楼），历史 84 tok
+
+== 单人角色扮演 · 第一轮 ==
+*她眯起左眼，盯着你手里那柄沾着些许泥污的短刀，嘴角勾起一抹玩味的笑。* 三晚？那倒是不多。不过，你最好先看看窗外那扇窗的朝向。
+
+*她随手从柜台下摸出一把钥匙，丢到你面前的木桌上，发出清脆的响声。* 二楼最里面的那间，窗户正对着钟楼。只要你不想在满月的第十三声敲响时，让那些东西溜进来，这价格还算公道。毕竟，在这个长夜纪，有些东西可不是按天算价的。
+
+*她转身去添了些柴火，炉火重新窜高了一些。* 说好了啊，今晚要是听到钟声不对劲，就别怪我下手不轻。旅
+提示词 529 tok（实际计算 529），生成 160 tok，首 token 220.11 秒，读取 2.4 tok/s，生成 1.5 tok/s，停止原因：长度上限，进程内存 3057 MB
+✅ 单人角色扮演：生成成功：生成 160 tok
+✅ 第一轮：无思考段泄漏：输出中不含 <think>
+✅ 第一轮：无模板符号泄漏：输出中不含 <|im_start|>/<|im_end|>
+✅ 第一轮：UTF-8 完整：没有乱码替换字符
+✅ 第一轮：首次计算完整提示词：计算 529/529
+
+== 单人角色扮演 · 第二轮 ==
+*艾琳动作顿了顿，手指无意识地摩挲着左眉那道浅疤，眼神里闪过一丝不易察觉的警惕，随即又恢复了那副吊儿郎当的模样。*
+
+*她转过身，倚靠在吧台边，压低声音像是说给自己听。*
+
+晚上……除了风刮过钟楼缝隙的

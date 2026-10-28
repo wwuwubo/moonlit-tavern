@@ -1,0 +1,126 @@
+ggml_metal_device_init: tensor API disabled for pre-M5 and pre-A19 devices
+ggml_metal_library_init: using embedded metal library
+ggml_metal_library_compile_all: compiled 'fa_aux' library in 1.668 sec
+ggml_metal_library_compile_all: compiled 'fa_f16' library in 1.751 sec
+ggml_metal_library_compile_all: compiled 'fa_f32' library in 9.161 sec
+ggml_metal_library_compile_all: compiled 'fa_q4_0' library in 2.757 sec
+ggml_metal_library_compile_all: compiled 'fa_q4_1' library in 11.221 sec
+ggml_metal_library_compile_all: compiled 'fa_q5_0' library in 3.645 sec
+ggml_metal_library_compile_all: compiled 'fa_q5_1' library in 12.453 sec
+ggml_metal_library_compile_all: compiled 'fa_q8_0' library in 1.504 sec
+ggml_metal_library_compile_all: compiled 'fa_tensor' library in 5.058 sec
+ggml_metal_library_compile_all: compiled 'fa_vec_f16' library in 10.306 sec
+ggml_metal_library_compile_all: compiled 'fa_vec_f32' library in 8.299 sec
+ggml_metal_library_compile_all: compiled 'fa_vec_q4_0' library in 7.757 sec
+ggml_metal_library_compile_all: compiled 'fa_vec_q4_1' library in 15.307 sec
+ggml_metal_library_compile_all: compiled 'fa_vec_q5_0' library in 11.624 sec
+ggml_metal_library_compile_all: compiled 'fa_vec_q5_1' library in 4.291 sec
+ggml_metal_library_compile_all: compiled 'fa_vec_q8_0' library in 7.855 sec
+ggml_metal_library_compile_all: compiled 'mul_mv' library in 5.058 sec
+ggml_metal_library_compile_all: compiled 'mul_mv_mma' library in 12.448 sec
+ggml_metal_library_compile_all: compiled 'mul_mm' library in 13.681 sec
+ggml_metal_library_compile_all: compiled 'quantize' library in 4.282 sec
+ggml_metal_library_compile_all: compiled 'softmax' library in 5.048 sec
+ggml_metal_library_compile_all: compiled 'norm' library in 5.048 sec
+ggml_metal_library_compile_all: compiled 'unary' library in 5.048 sec
+ggml_metal_library_compile_all: compiled 'binbcast' library in 5.048 sec
+ggml_metal_library_compile_all: compiled 'reduce' library in 4.282 sec
+ggml_metal_library_compile_all: compiled 'tri' library in 5.048 sec
+ggml_metal_library_compile_all: compiled 'ssm' library in 5.048 sec
+ggml_metal_library_compile_all: compiled 'wkv' library in 5.048 sec
+ggml_metal_library_compile_all: compiled 'gated_delta_net' library in 5.043 sec
+ggml_metal_library_compile_all: compiled 'solve_tri' library in 5.110 sec
+ggml_metal_library_compile_all: compiled 'rope' library in 5.094 sec
+ggml_metal_library_compile_all: compiled 'conv' library in 5.043 sec
+ggml_metal_library_compile_all: compiled 'upscale' library in 3.654 sec
+ggml_metal_library_compile_all: compiled 'argsort' library in 5.029 sec
+ggml_metal_library_compile_all: compiled 'pool' library in 5.029 sec
+ggml_metal_library_compile_all: compiled 'misc' library in 4.383 sec
+ggml_metal_library_compile_all: loaded 36 libraries from embedded data in 15.308 sec (max single = 15.307 sec)
+ggml_metal_rsets_init: creating a residency set collection (keep_alive = 180 s)
+ggml_metal_device_init: GPU name:   MTL0 (Apple Paravirtual device)
+ggml_metal_device_init: GPU family: MTLGPUFamilyApple5  (1005)
+ggml_metal_device_init: simdgroup reduction   = false
+ggml_metal_device_init: simdgroup matrix mul. = false
+ggml_metal_device_init: has unified memory    = true
+ggml_metal_device_init: has bfloat            = false
+ggml_metal_device_init: has tensor            = false
+ggml_metal_device_init: use residency sets    = true
+ggml_metal_device_init: use shared buffers    = true
+ggml_metal_device_init: recommendedMaxWorkingSetSize  = 10021.60 MB
+== 加载模型 Qwen3-0.6B-Q8_0.gguf ==
+模型：qwen3 0.6B Q8_0，架构 qwen3，参数 0.60B
+上下文 8192（训练 40960），模板 chatml，思考模式 支持
+GPU：Metal，加载耗时 1.72 秒，进程内存 1168 MB
+
+提示词组装：系统 289 tok，世界书 66 tok（激活 世界观：长夜、地点：钟楼），历史 95 tok
+
+== 单人角色扮演 · 第一轮 ==
+*艾琳把酒杯放在桌上，声音轻柔而带着些许笑意。* 三晚，房间朝钟楼的方向是没错的。*她靠在门框上，指尖轻轻敲击着门框。* 但要是想住进那个地方，先跟我买一张票吧，因为满月那晚，钟楼的封印会松动。*
+提示词 569 tok（实际计算 569），生成 80 tok，首 token 13.46 秒，读取 42.3 tok/s，生成 5.9 tok/s，停止原因：自然结束，进程内存 1211 MB
+✅ 单人角色扮演：生成成功：生成 80 tok
+✅ 第一轮：无思考段泄漏：输出中不含 <think>
+✅ 第一轮：无模板符号泄漏：输出中不含 <|im_start|>/<|im_end|>
+✅ 第一轮：UTF-8 完整：没有乱码替换字符
+✅ 第一轮：首次计算完整提示词：计算 569/569
+
+== 单人角色扮演 · 第二轮 ==
+*艾琳轻轻合上手中的酒杯，眼神中透着几分警惕。* 满月的钟声已经响起第三声，那里的封印应该已经松开了。*她把酒杯放在桌角，手指微微收紧。* 那个地方本来不该有人，现在或许可以安心。*
+提示词 672 tok（实际计算 23），生成 68 tok，首 token 0.82 秒，读取 28.2 tok/s，生成 5.1 tok/s，停止原因：自然结束，进程内存 1211 MB
+✅ 第二轮：生成成功：生成 68 tok
+✅ 第二轮：无思考段泄漏：输出中不含 <think>
+✅ 第二轮：无模板符号泄漏：输出中不含 <|im_start|>/<|im_end|>
+✅ 第二轮：UTF-8 完整：没有乱码替换字符
+✅ 第二轮：复用 KV 缓存：复用 649/672 tok，只计算新增的 23 tok
+
+== 重新生成（同一提示词） ==
+*艾琳轻轻合上手中的酒杯，眼神中透着几分警惕。* 满月的钟声已经响起第三声，那里的封印应该已经松开了。*她把酒杯放在桌角，手指微微收紧。* 那个地方本来不该有人，现在或许可以安心。*
+提示词 672 tok（实际计算 1），生成 68 tok，首 token 0.19 秒，读取 5.4 tok/s，生成 6.4 tok/s，停止原因：自然结束，进程内存 1211 MB
+✅ 重新生成：成功：生成 68 tok
+✅ 重新生成：KV 回退：部分回退成功，只重算 1 tok
+
+== 停止生成（收到 6 段后取消） ==
+*艾琳轻轻合上
+提示词 672 tok（实际计算 1），生成 6 tok，首 token 0.15 秒，读取 6.8 tok/s，生成 7.1 tok/s，停止原因：用户停止，进程内存 1211 MB
+✅ 停止生成：及时停止：停止原因 用户停止，已生成 6 tok
+✅ 群聊：被点名的角色发言：选中 莱恩
+
+== 群聊 · 莱恩发言 ==
+*他摩挲着腰间的长剑，眼神平静而坚定。* 回来不是因为什么特殊，而是因为... *他转身看向酒馆窗外，月光透过窗棂洒在他身上。* 每年满月前，我会回到这里。
+提示词 743 tok（实际计算 726），生成 57 tok，首 token 16.89 秒，读取 43.0 tok/s，生成 6.3 tok/s，停止原因：自然结束，进程内存 1211 MB
+✅ 群聊：生成成功：生成 57 tok
+✅ 群聊：不替其他角色发言：输出中没有「艾琳：」「旅人：」开头的行
+✅ 群聊：无思考段泄漏：输出中不含 <think>
+✅ 群聊：无模板符号泄漏：输出中不含 <|im_start|>/<|im_end|>
+✅ 群聊：UTF-8 完整：没有乱码替换字符
+
+== 记忆摘要 ==
+摘要：艾琳向旅人介绍三晚住宿和钟楼房间，同时暗示钟楼封印可能松动。
+
+事件：
+- 艾琳推荐三晚住宿并提供钟楼方向房间。
+- 旅人询问钟楼夜晚的活动。
+
+关系：
+- 甲→乙：艾琳态度转变，从建议到提供信息。
+
+状态：
+- 地点=王都酒馆；时间=深夜；键=值。
+
+出场角色：艾琳；用户扮演：旅人。
+提示词 351 tok（实际计算 347），生成 106 tok，首 token 8.67 秒，读取 40.0 tok/s，生成 5.5 tok/s，停止原因：自然结束，进程内存 1211 MB
+✅ 摘要：生成并解析：摘要 30 字，事件 2 条，关系 1 条，状态 3 项
+
+== 长上下文（接近 8192 tok） ==
+艾琳在酒馆中与多个披着斗篷的旅人相伴，每晚都见证着他们的到来与离去，气氛始终保持着紧张而神秘的氛围。
+提示词 7686 tok（实际计算 7683），生成 36 tok，首 token 359.07 秒，读取 21.4 tok/s，生成 4.8 tok/s，停止原因：自然结束，进程内存 1225 MB
+✅ 长上下文：8192 上下文跑通：提示词 7686 tok，生成 36 tok，首 token 359.07 秒
+✅ 卸载模型：卸载后引擎状态为空
+
+== 汇总 ==
+检查 22 项，通过 22 项，关键项失败 0 项
+引擎日志：
+  [18:36:55] 开始加载 Qwen3-0.6B-Q8_0.gguf，上下文 8192，KV q8_0
+  [18:36:55] llama: load: control-looking token: 128247 '</s>' was not control-type; this is probably a bug in the model. its type will be overridden
+  [18:36:57] 加载完成：qwen3 0.6B Q8_0，1.7 秒，进程内存 1168 MB
+  [18:44:50] 模型已卸载
