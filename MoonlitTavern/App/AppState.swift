@@ -84,11 +84,13 @@ final class AppState: ObservableObject {
 
     init() {
         let env = ProcessInfo.processInfo.environment
-        // UI 自动化测试：使用一次性的数据目录，从示例数据开始
+        // UI 自动化测试：每轮测试使用独立的数据目录，从示例数据开始；
+        // 同一轮测试里重启 App 时传入相同的 MOONLIT_UITEST_RUN，用来验证数据能保留
         let isUITest = env["MOONLIT_UITEST"] == "1"
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        let testRun = env["MOONLIT_UITEST_RUN"] ?? UUID().uuidString
         let root = isUITest
-            ? FileManager.default.temporaryDirectory.appendingPathComponent("MoonlitTavern-UITest-\(UUID().uuidString)", isDirectory: true)
+            ? FileManager.default.temporaryDirectory.appendingPathComponent("MoonlitTavern-UITest-\(testRun)", isDirectory: true)
             : support.appendingPathComponent("MoonlitTavern", isDirectory: true)
         let opened: TavernStore
         do {

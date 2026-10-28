@@ -48,6 +48,7 @@ final class MoonlitTavernUITests: XCTestCase {
     func testLocalRoleplayEndToEnd() throws {
         let app = XCUIApplication()
         app.launchEnvironment["MOONLIT_UITEST"] = "1"
+        app.launchEnvironment["MOONLIT_UITEST_RUN"] = UUID().uuidString
         app.launchEnvironment["MOONLIT_MAX_TOKENS"] = env["MOONLIT_MAX_TOKENS"] ?? "48"
         app.launchEnvironment["MOONLIT_CONTEXT"] = env["MOONLIT_CONTEXT"] ?? "2048"
         if let dir = env["MOONLIT_MODEL_DIR"] {
@@ -102,11 +103,13 @@ final class MoonlitTavernUITests: XCTestCase {
         }
         let elapsed = Date().timeIntervalSince(start)
         let replies = count(app, "message-assistant")
+        let userMessages = count(app, "message-user")
         log(String(format: "生成结束，用时 %.1f 秒，助手消息数 %d", elapsed, replies))
         XCTAssertGreaterThan(replies, greetings, "没有收到本地模型的回复")
         let lastReply = app.descendants(matching: .any).matching(identifier: "message-assistant").element(boundBy: replies - 1)
-        log("回复内容：\(lastReply.label)")
-        XCTAssertFalse(lastReply.label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, "回复为空")
+        let replyText = lastReply.label
+        log("回复内容：\(replyText)")
+        XCTAssertFalse(replyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, "回复为空")
         save("05-收到回复", app)
 
         // 4. 右侧面板
@@ -147,6 +150,41 @@ final class MoonlitTavernUITests: XCTestCase {
         sleep(2)
         save("09-竖屏", app)
         XCUIDevice.shared.orientation = .landscapeLeft
+        sleep(1)
+
+        // 8. 退出并重新启动：聊天记录保留，模型重新加载后可以接着聊
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(composer.waitForExistence(timeout: 30), "重启后聊天输入框没有出现")
+        let restoredUser = count(app, "message-user")
+        let restoredReplies = count(app, "message-assistant")
+        let restoredLast = restoredReplies > 0
+            ? app.descendants(matching: .any).matching(identifier: "message-assistant").element(boundBy: restoredReplies - 1).label
+            : ""
+        log("重启后：用户消息 \(restoredUser)/\(userMessages)，助手消息 \(restoredReplies)/\(replies)，最后一条回复与重启前一致：\(restoredLast == replyText)")
+        XCTAssertEqual(restoredUser, userMessages, "重启后用户消息数量不一致")
+        XCTAssertEqual(restoredReplies, replies, "重启后助手消息数量不一致")
+        XCTAssertEqual(restoredLast, replyText, "重启后最后一条回复内容不一致")
+        save("10-重启后", app)
+
+        composer.tap()
+        composer.typeText("那就要朝钟楼的那间。")
+        send.tap()
+        let start2 = Date()
+        _ = stop.waitForExistence(timeout: 30)
+        let deadline2 = Date().addingTimeInterval(Double(env["MOONLIT_GEN_TIMEOUT"] ?? "600") ?? 600)
+        while Date() < deadline2 {
+            if !stop.exists && count(app, "message-assistant") > restoredReplies { break }
+            sleep(2)
+        }
+        let replies2 = count(app, "message-assistant")
+        log(String(format: "重启后继续对话：用时 %.1f 秒，助手消息数 %d", Date().timeIntervalSince(start2), replies2))
+        XCTAssertGreaterThan(replies2, restoredReplies, "重启后没有收到回复")
+        if replies2 > restoredReplies {
+            let reply2 = app.descendants(matching: .any).matching(identifier: "message-assistant").element(boundBy: replies2 - 1)
+            log("重启后回复内容：\(reply2.label)")
+        }
+        save("11-重启后继续对话", app)
         log("测试流程结束")
     }
 }
