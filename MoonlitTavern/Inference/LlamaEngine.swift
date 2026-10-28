@@ -72,6 +72,11 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
     private var cachedTokens: [llama_token] = []
     private var config: LlamaLoadConfig?
     private var chatTemplate: String?
+    /// 混合 / 循环架构（Qwen3.5 的 DeltaNet 层等）：状态无法部分回退。
+    private var needsCheckpoints = false
+    /// 提示词末尾前一个位置的「部分状态」检查点（只含循环层状态，几十 MB）。
+    /// 重新生成、停止后重来时，从这里恢复，不用整段重算。
+    private var checkpoint: (tokens: [llama_token], data: [UInt8])?
 
     private var _info: LoadedModelInfo?
     private var currentToken: CancelToken?
@@ -188,6 +193,8 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
         vocab = loadedVocab
         lifetimeLock.unlock()
         cachedTokens = []
+        checkpoint = nil
+        needsCheckpoints = llama_model_is_recurrent(loadedModel) || llama_model_is_hybrid(loadedModel)
 
         let template = llama_model_chat_template(loadedModel, nil).map { String(cString: $0) }
         chatTemplate = template
@@ -249,6 +256,7 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
         vocab = nil
         lifetimeLock.unlock()
         cachedTokens = []
+        checkpoint = nil
         chatTemplate = nil
         stateLock.lock()
         let hadModel = _info != nil
@@ -363,6 +371,33 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
         )
     }
 
+    /// 保存「部分状态」检查点（只含循环层状态）。只在 queue 上调用。
+    private func saveCheckpoint(ctx: OpaquePointer) {
+        let flags = llama_state_seq_flags(LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY)
+        let size = llama_state_seq_get_size_ext(ctx, 0, flags)
+        guard size > 0 else { checkpoint = nil; return }
+        var data = [UInt8](repeating: 0, count: size)
+        let written = llama_state_seq_get_data_ext(ctx, &data, size, 0, flags)
+        if written == size {
+            checkpoint = (tokens: cachedTokens, data: data)
+        } else {
+            checkpoint = nil
+            EngineLog.shared.append("检查点保存失败（\(written)/\(size) 字节）")
+        }
+    }
+
+    private func restoreCheckpoint(_ ckpt: (tokens: [llama_token], data: [UInt8]), ctx: OpaquePointer) -> Bool {
+        let flags = llama_state_seq_flags(LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY)
+        let read = ckpt.data.withUnsafeBufferPointer { buffer in
+            llama_state_seq_set_data_ext(ctx, buffer.baseAddress, buffer.count, 0, flags)
+        }
+        if read != ckpt.data.count {
+            EngineLog.shared.append("检查点恢复失败，改为整段重算")
+            return false
+        }
+        return true
+    }
+
     private func runGeneration(
         _ request: GenerationRequest,
         token cancelToken: CancelToken,
@@ -390,9 +425,17 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
         while common < limit && cachedTokens[common] == promptTokens[common] { common += 1 }
         if common == promptTokens.count { common -= 1 } // 至少重新计算最后一个 token 以取得 logits
         if common < cachedTokens.count {
-            if !llama_memory_seq_rm(memory, 0, Int32(common), -1) {
-                // 循环/混合架构不支持部分回退
+            if llama_memory_seq_rm(memory, 0, Int32(common), -1) {
+                // 标准 Transformer：直接截断
+            } else if let ckpt = checkpoint, ckpt.tokens.count <= common,
+                      promptTokens.starts(with: ckpt.tokens),
+                      restoreCheckpoint(ckpt, ctx: ctx),
+                      llama_memory_seq_rm(memory, 0, Int32(ckpt.tokens.count), -1) {
+                // 混合架构：恢复循环层检查点，再截断注意力层的 KV
+                common = ckpt.tokens.count
+            } else {
                 llama_memory_clear(memory, true)
+                checkpoint = nil
                 common = 0
             }
         }
@@ -420,15 +463,43 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
                 batch.n_tokens += 1
             }
             let isLastChunk = processed + chunk.count == toEvaluate.count
-            if isLastChunk { batch.logits[Int(batch.n_tokens) - 1] = 1 }
+            if isLastChunk {
+                // 混合架构：最后一个 token 单独计算，在它之前保存检查点
+                if needsCheckpoints && chunk.count > 1 {
+                    batch.n_tokens -= 1
+                    let rcPrefix = llama_decode(ctx, batch)
+                    if rcPrefix != 0 {
+                        llama_memory_clear(memory, true)
+                        cachedTokens = []
+                        checkpoint = nil
+                        throw InferenceError.decodeFailed(rcPrefix)
+                    }
+                    cachedTokens.append(contentsOf: chunk.dropLast())
+                    processed += chunk.count - 1
+                    saveCheckpoint(ctx: ctx)
+                    batch.n_tokens = 0
+                    let i = 0
+                    batch.token[i] = chunk.last!
+                    batch.pos[i] = llama_pos(common + processed)
+                    batch.n_seq_id[i] = 1
+                    batch.seq_id[i]![0] = 0
+                    batch.n_tokens = 1
+                } else if needsCheckpoints, checkpoint?.tokens != cachedTokens {
+                    saveCheckpoint(ctx: ctx)
+                }
+                batch.logits[Int(batch.n_tokens) - 1] = 1
+            }
+            let chunkCount = Int(batch.n_tokens)
+            let evaluatedSlice = isLastChunk && needsCheckpoints && chunk.count > 1 ? Array(chunk.suffix(1)) : Array(chunk)
             let rc = llama_decode(ctx, batch)
             if rc != 0 {
                 llama_memory_clear(memory, true)
                 cachedTokens = []
+                checkpoint = nil
                 throw InferenceError.decodeFailed(rc)
             }
-            processed += chunk.count
-            cachedTokens.append(contentsOf: chunk)
+            processed += chunkCount
+            cachedTokens.append(contentsOf: evaluatedSlice)
             emit(.progress(.processingPrompt, Double(processed) / Double(toEvaluate.count)))
         }
         let promptDone = Date()
