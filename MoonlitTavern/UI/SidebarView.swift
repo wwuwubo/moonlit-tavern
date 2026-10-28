@@ -22,7 +22,9 @@ struct SidebarView: View {
     }
 
     var body: some View {
-        List(selection: Binding(get: { state.selectedChatID }, set: { state.selectedChatID = $0 })) {
+        // 不用 List 的系统选中样式：它在侧栏失去焦点时会变成灰底，深浅文字都难以兼顾。
+        // 选中状态由 ChatRow 自己绘制。
+        List {
             Section {
                 ModelStatusRow()
                     .listRowBackground(Color.clear)
@@ -201,14 +203,13 @@ struct ChatRow: View {
     var compact = false
 
     var body: some View {
-        // 选中时系统用琥珀色高亮整行，文字改成深色才看得清
         let selected = state.selectedChatID == chat.id
         HStack(spacing: 10) {
             if !compact {
                 ZStack(alignment: .leading) {
                     ForEach(Array(state.participants(of: chat).prefix(3).enumerated()), id: \.offset) { index, c in
                         AvatarView(name: c.name, imageData: state.avatarData(for: c), size: 26)
-                            .overlay(Circle().stroke(selected ? Theme.amber : Theme.surface, lineWidth: 2))
+                            .overlay(Circle().stroke(Theme.surface, lineWidth: 2))
                             .offset(x: CGFloat(index) * 14)
                             .zIndex(Double(-index))
                     }
@@ -219,19 +220,34 @@ struct ChatRow: View {
                 HStack(spacing: 6) {
                     Text(chat.title)
                         .font(compact ? .subheadline : .body)
+                        .fontWeight(selected ? .semibold : .regular)
                         .lineLimit(1)
-                        .foregroundStyle(selected ? Theme.background : Theme.textPrimary)
-                    if chat.isSample { SampleBadge(onAccent: selected) }
+                        .foregroundStyle(selected ? Theme.amber : Theme.textPrimary)
+                    if chat.isSample { SampleBadge() }
                 }
                 if let last = chat.activePath().last {
                     Text(last.content.replacingOccurrences(of: "\n", with: " "))
                         .font(.caption)
-                        .foregroundStyle(selected ? Theme.background.opacity(0.62) : Theme.textTertiary)
+                        .foregroundStyle(selected ? Theme.textSecondary : Theme.textTertiary)
                         .lineLimit(1)
                 }
             }
+            Spacer(minLength: 0)
         }
         .padding(.vertical, 2)
+        .contentShape(Rectangle())
+        .onTapGesture { state.selectedChatID = chat.id }
+        .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
+        .listRowBackground(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(selected ? Theme.amber.opacity(0.14) : Color.clear)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .stroke(selected ? Theme.amber.opacity(0.35) : Color.clear, lineWidth: 1)
+                )
+                .padding(.horizontal, 6)
+                .padding(.vertical, 1)
+        )
     }
 }
 

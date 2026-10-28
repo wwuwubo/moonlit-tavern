@@ -52,7 +52,30 @@ scripts/build-ios.sh && scripts/package-ipa.sh && scripts/verify-ipa.sh
 
 ## 安装
 
-Releases 里的 `MoonlitTavern-unsigned.ipa` **没有签名**，需要用全能签等工具配合你自己的证书和描述文件签名后安装。详见 `docs/` 中的安装指南。
+Releases 里的 `MoonlitTavern-unsigned.ipa` **没有签名**，需要用全能签等工具配合你自己的证书和描述文件签名后安装，见 [docs/INSTALL.md](docs/INSTALL.md)。模型不在安装包里，下载与导入见 [docs/MODELS.md](docs/MODELS.md)。
+
+## 当前状态
+
+| 项目 | 状态 |
+|---|---|
+| 核心逻辑单元测试（71 项） | 通过（Linux / macOS） |
+| iOS 真机构建（Xcode 27.1 · iOS 27.1 SDK；Xcode 26.6 · iOS 26.5 SDK） | 通过 |
+| 未签名 IPA 结构检查 | 通过 |
+| 真实模型引擎测试（macOS，Qwen3-0.6B 8K / Qwen3.5-0.8B 4K） | 22/22 通过 |
+| iPad 模拟器端到端测试（本地推理、重启后保留记录） | 通过 |
+| 真机安装与性能 | 未测试（没有真机） |
+
+详细结果与证据见 [docs/TEST_REPORT.md](docs/TEST_REPORT.md)。
+
+## 文档
+
+- [docs/INSTALL.md](docs/INSTALL.md)：全能签安装
+- [docs/MODELS.md](docs/MODELS.md)：模型选择、内存估算、下载与导入
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)：分层、提示词顺序、世界书规则、记忆、群聊、KV 缓存
+- [docs/TEST_REPORT.md](docs/TEST_REPORT.md)：测试报告与验收问题
+- [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md)：已知问题
+- [docs/ROADMAP.md](docs/ROADMAP.md)：后续路线
+- `docs/evidence/`：测试日志与截图
 
 ## 许可
 

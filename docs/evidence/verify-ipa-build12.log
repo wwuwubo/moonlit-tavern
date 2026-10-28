@@ -1,0 +1,131 @@
+✅ Payload/MoonlitTavern.app 存在
+== 顶层文件 ==
+total 10976
+drwxr-xr-x  9 runner  staff      288 Oct 28 23:17 .
+drwxr-xr-x  3 runner  staff       96 Oct 28 23:17 ..
+-rw-r--r--  1 runner  staff    15652 Oct 28 23:17 AppIcon60x60@2x.png
+-rw-r--r--  1 runner  staff    21448 Oct 28 23:17 AppIcon76x76@2x~ipad.png
+-rw-r--r--  1 runner  staff   208552 Oct 28 23:17 Assets.car
+drwxr-xr-x  3 runner  staff       96 Oct 28 23:17 Frameworks
+-rw-r--r--  1 runner  staff     1767 Oct 28 23:17 Info.plist
+-rwxr-xr-x  1 runner  staff  5358256 Oct 28 23:17 MoonlitTavern
+-rw-r--r--  1 runner  staff        8 Oct 28 23:17 PkgInfo
+✅ Info.plist 存在
+== Info.plist 关键字段 ==
+CFBundleIdentifier           com.wuwuyou.moonlittavern 
+CFBundleExecutable           MoonlitTavern 
+CFBundleShortVersionString   0.1.0 
+CFBundleVersion              1 
+MinimumOSVersion             17.0 
+DTPlatformName               iphoneos 
+DTSDKName                    iphoneos27.1 
+UIDeviceFamily               Array {     2 } 
+UIFileSharingEnabled         true 
+✅ 平台为 iphoneos（真机，非模拟器）
+== 主程序 ==
+Payload/MoonlitTavern.app/MoonlitTavern: Mach-O 64-bit executable arm64
+Non-fat file: Payload/MoonlitTavern.app/MoonlitTavern is architecture: arm64
+✅ 主程序为 arm64
+== 动态库依赖 ==
+Payload/MoonlitTavern.app/MoonlitTavern:
+	@rpath/llama.framework/llama (compatibility version 0.0.0, current version 0.0.0)
+	/System/Library/Frameworks/Foundation.framework/Foundation (compatibility version 300.0.0, current version 5027.0.69)
+	/usr/lib/libobjc.A.dylib (compatibility version 1.0.0, current version 228.0.0)
+	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1359.0.0)
+	/System/Library/Frameworks/Combine.framework/Combine (compatibility version 1.0.0, current version 3023.0.0)
+	/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation (compatibility version 150.0.0, current version 5027.0.69)
+	/System/Library/Frameworks/CoreTransferable.framework/CoreTransferable (compatibility version 1.0.0, current version 1.0.0)
+	/System/Library/Frameworks/PhotosUI.framework/PhotosUI (compatibility version 1.0.0, current version 912.20.123)
+	/System/Library/Frameworks/Security.framework/Security (compatibility version 1.0.0, current version 62460.2.3)
+	/System/Library/Frameworks/SwiftUI.framework/SwiftUI (compatibility version 1.0.0, current version 8.0.85)
+	/System/Library/Frameworks/UIKit.framework/UIKit (compatibility version 1.0.0, current version 9127.0.85)
+	/System/Library/Frameworks/_PhotosUI_SwiftUI.framework/_PhotosUI_SwiftUI (compatibility version 1.0.0, current version 912.20.123)
+	/usr/lib/swift/libswiftAVFoundation.dylib (compatibility version 1.0.0, current version 2450.77.1, weak)
+	/usr/lib/swift/libswiftCore.dylib (compatibility version 0.0.0, current version 0.0.0)
+	/usr/lib/swift/libswiftCoreAudio.dylib (compatibility version 1.0.0, current version 482.102.0, weak)
+	/usr/lib/swift/libswiftCoreFoundation.dylib (compatibility version 1.0.0, current version 120.100.0)
+	/usr/lib/swift/libswiftCoreImage.dylib (compatibility version 1.0.0, current version 3.0.0, weak)
+	/usr/lib/swift/libswiftCoreLocation.dylib (compatibility version 1.0.0, current version 57.0.0, weak)
+	/usr/lib/swift/libswiftCoreMIDI.dylib (compatibility version 1.0.0, current version 6.0.0, weak)
+	/usr/lib/swift/libswiftDarwin.dylib (compatibility version 1.0.0, current version 428.0.10, weak)
+	/usr/lib/swift/libswiftDispatch.dylib (compatibility version 1.0.0, current version 1605.0.2)
+	/usr/lib/swift/libswiftMetal.dylib (compatibility version 1.0.0, current version 382.5.3, weak)
+	/usr/lib/swift/libswiftOSLog.dylib (compatibility version 1.0.0, current version 10.0.0, weak)
+	/usr/lib/swift/libswiftObjectiveC.dylib (compatibility version 1.0.0, current version 973.1.0, weak)
+	/usr/lib/swift/libswiftQuartzCore.dylib (compatibility version 1.0.0, current version 5.0.0, weak)
+	/usr/lib/swift/libswiftSpatial.dylib (compatibility version 1.0.0, current version 1.0.0, weak)
+	/usr/lib/swift/libswiftUniformTypeIdentifiers.dylib (compatibility version 1.0.0, current version 919.0.1)
+	/usr/lib/swift/libswiftXPC.dylib (compatibility version 1.0.0, current version 167.0.2, weak)
+	/usr/lib/swift/libswift_Concurrency.dylib (compatibility version 0.0.0, current version 0.0.0)
+	/usr/lib/swift/libswiftos.dylib (compatibility version 1.0.0, current version 1090.0.0)
+	/usr/lib/swift/libswiftsimd.dylib (compatibility version 1.0.0, current version 25.0.0, weak)
+✅ 主程序链接 llama.framework
+✅ Frameworks/llama.framework 已嵌入
+Non-fat file: Payload/MoonlitTavern.app/Frameworks/llama.framework/llama is architecture: arm64
+导出符号数：5386
+✅ llama.framework 含 Metal 后端
+✅ llama.framework 导出 llama_decode
+主程序引用的 llama/ggml 接口（48 个）：
+_llama_backend_init
+_llama_batch_free
+_llama_batch_init
+_llama_chat_apply_template
+_llama_context_default_params
+_llama_decode
+_llama_free
+_llama_get_memory
+_llama_init_from_model
+_llama_log_set
+_llama_memory_clear
+_llama_memory_seq_rm
+_llama_model_chat_template
+_llama_model_default_params
+_llama_model_desc
+_llama_model_free
+_llama_model_get_vocab
+_llama_model_is_hybrid
+_llama_model_is_recurrent
+_llama_model_load_from_file
+_llama_model_meta_val_str
+_llama_model_n_ctx_train
+_llama_model_n_params
+_llama_model_size
+_llama_n_batch
+_llama_n_ctx
+_llama_sampler_accept
+_llama_sampler_chain_add
+_llama_sampler_chain_default_params
+_llama_sampler_chain_init
+_llama_sampler_free
+_llama_sampler_init_dist
+_llama_sampler_init_greedy
+_llama_sampler_init_min_p
+_llama_sampler_init_penalties
+_llama_sampler_init_temp
+_llama_sampler_init_top_k
+_llama_sampler_init_top_p
+_llama_sampler_sample
+_llama_state_seq_get_data_ext
+_llama_state_seq_get_size_ext
+_llama_state_seq_set_data_ext
+_llama_supports_gpu_offload
+_llama_token_to_piece
+_llama_tokenize
+_llama_vocab_get_add_bos
+_llama_vocab_is_eog
+_llama_vocab_n_tokens
+✅ 主程序调用 _llama_model_load_from_file
+✅ 主程序调用 _llama_init_from_model
+✅ 主程序调用 _llama_decode
+✅ 主程序调用 _llama_sampler_sample
+✅ 主程序调用 _llama_tokenize
+✅ 主程序调用 _llama_memory_seq_rm
+== 签名状态 ==
+Payload/MoonlitTavern.app: code object is not signed at all
+✅ App 未签名（需用全能签等工具签名后安装）
+不包含描述文件（符合未签名 IPA 预期）
+== 资源 ==
+✅ Assets.car 存在（图标与配色）
+ 17M	Payload/MoonlitTavern.app
+4.9M	build/MoonlitTavern-unsigned.ipa
+IPA 结构检查全部通过

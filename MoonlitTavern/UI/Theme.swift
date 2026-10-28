@@ -57,16 +57,13 @@ struct AvatarView: View {
 
 /// 「示例」徽章：演示数据必须明确标注。
 struct SampleBadge: View {
-    /// 放在琥珀色高亮背景上时改用深色
-    var onAccent = false
-
     var body: some View {
         Text("示例")
             .font(.caption2.weight(.semibold))
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
-            .background(Capsule().fill(onAccent ? Theme.background.opacity(0.14) : Theme.moon.opacity(0.16)))
-            .foregroundStyle(onAccent ? Theme.background.opacity(0.8) : Theme.moon)
+            .background(Capsule().fill(Theme.moon.opacity(0.16)))
+            .foregroundStyle(Theme.moon)
     }
 }
 
