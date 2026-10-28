@@ -1,0 +1,21 @@
+# Xcode / 构建
+build/
+dist/
+logs/
+DerivedData/
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
+Vendor/llama.xcframework/
+Vendor/*.zip
+
+# SwiftPM
+.build/
+.swiftpm/
+Package.resolved
+
+# 系统
+.DS_Store
+
+# 模型文件不进仓库
+*.gguf
