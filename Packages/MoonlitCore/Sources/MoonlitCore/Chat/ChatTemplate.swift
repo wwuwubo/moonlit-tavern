@@ -68,6 +68,11 @@ public struct RenderedPrompt: Sendable {
     public var text: String
     /// 模型应在这些字符串处停下（模板自身的结束标记）。
     public var stopSequences: [String]
+
+    public init(text: String, stopSequences: [String]) {
+        self.text = text
+        self.stopSequences = stopSequences
+    }
 }
 
 public enum ChatTemplateRenderer {
