@@ -19,3 +19,9 @@ Package.resolved
 
 # 模型文件不进仓库
 *.gguf
+
+# 推理实测工具（CI 运行时复制进来）
+Tools/EngineHarness/llama.xcframework/
+Tools/EngineHarness/Sources/EngineHarness/Shared/
+Tools/EngineHarness/.build/
+models/

@@ -5,7 +5,12 @@ import os
 enum DeviceMetrics {
     /// 系统允许本进程再分配的内存（MB）。这是 iPadOS 给单个应用的实际上限，不等于物理内存。
     static func availableMemoryMB() -> Double {
-        Double(os_proc_available_memory()) / 1_048_576
+        #if os(iOS)
+        return Double(os_proc_available_memory()) / 1_048_576
+        #else
+        // macOS 没有单应用上限，用物理内存减去当前占用近似（仅供测试工具使用）
+        return physicalMemoryMB - (footprintMB() ?? 0)
+        #endif
     }
 
     /// 本进程当前的物理内存占用（MB），与 Xcode 内存仪表一致的 phys_footprint。

@@ -196,6 +196,10 @@ final class ChatTemplateTests: XCTestCase {
         <|im_start|>user
         U1<|im_end|>
         <|im_start|>assistant
+        <think>
+
+        </think>
+
         A1<|im_end|>
         <|im_start|>user
         U2
@@ -211,6 +215,11 @@ final class ChatTemplateTests: XCTestCase {
         XCTAssertTrue(r.stopSequences.contains("<|im_end|>"))
         let noThink = ChatTemplateRenderer.render(messages, format: .chatml, disableThinking: true, modelSupportsThinking: false)
         XCTAssertFalse(noThink.text.contains("<think>"))
+        // 上一轮的完整提示词 + 回复，必须是下一轮提示词的前缀（KV 缓存续用的前提）
+        let turn1 = ChatTemplateRenderer.render(Array(messages.prefix(2)), format: .chatml, disableThinking: true, modelSupportsThinking: true)
+        let turn2 = ChatTemplateRenderer.render(Array(messages.prefix(3)) + [PromptMessage(role: .user, content: "U9")],
+                                                format: .chatml, disableThinking: true, modelSupportsThinking: true)
+        XCTAssertTrue(turn2.text.hasPrefix(turn1.text + "A1"))
     }
 
     func testGemmaMergesSystemIntoFirstUser() {

@@ -52,11 +52,12 @@ for sym in _llama_model_load_from_file _llama_init_from_model _llama_decode _lla
 done
 
 echo "== 签名状态 =="
-if codesign -dv "$APP" 2>&1 | grep -q "not signed"; then
-  pass "未签名（需用全能签等工具签名后安装）"
+SIGN_INFO="$(codesign -dv "$APP" 2>&1 || true)"
+echo "$SIGN_INFO"
+if grep -q "not signed" <<< "$SIGN_INFO"; then
+  pass "App 未签名（需用全能签等工具签名后安装）"
 else
-  codesign -dv "$APP" 2>&1 || true
-  echo "⚠️ 检测到签名信息（可能是 ad-hoc 签名）"
+  echo "⚠️ 检测到签名信息（可能是链接器自动加的 ad-hoc 签名，不含证书，仍需重新签名）"
 fi
 [[ -f "$APP/embedded.mobileprovision" ]] && echo "包含 embedded.mobileprovision" || echo "不包含描述文件（符合未签名 IPA 预期）"
 

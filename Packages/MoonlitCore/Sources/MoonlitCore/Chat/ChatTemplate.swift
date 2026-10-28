@@ -90,14 +90,16 @@ public enum ChatTemplateRenderer {
         let merged = mergeConsecutive(messages)
         switch format {
         case .chatml, .auto, .modelBuiltin:
+            // 关闭思考时，历史里的助手回复也带上同样的空思考段：
+            // 这样上一轮生成时的提示词恰好是下一轮提示词的前缀，KV 缓存可以直接续用，
+            // 对 Qwen3.5 这类无法部分回退的混合架构尤其重要。
+            let emptyThink = disableThinking && modelSupportsThinking ? "<think>\n\n</think>\n\n" : ""
             var out = ""
             for m in merged {
-                out += "<|im_start|>\(roleName(m.role))\n\(m.content)<|im_end|>\n"
+                let body = m.role == .assistant ? emptyThink + m.content : m.content
+                out += "<|im_start|>\(roleName(m.role))\n\(body)<|im_end|>\n"
             }
-            out += "<|im_start|>assistant\n"
-            if disableThinking && modelSupportsThinking {
-                out += "<think>\n\n</think>\n\n"
-            }
+            out += "<|im_start|>assistant\n" + emptyThink
             out += prefill
             return RenderedPrompt(text: out, stopSequences: ["<|im_end|>", "<|im_start|>", "<|endoftext|>"])
 

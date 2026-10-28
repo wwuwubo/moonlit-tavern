@@ -1,13 +1,18 @@
 name: Build
 
-# 每次推送到 main 都会：
-# 1. 在 macOS 上运行 MoonlitCore 单元测试
-# 2. 用 Xcode 构建 iphoneos Release 版本（不签名），打包为未签名 IPA 并检查结构
-# 3. 把 IPA、构建日志、Xcode 工程打包发布到 GitHub Releases（预发布），方便在 iPad 上直接下载
+# 每次推送到 main：
+# 1. 运行 MoonlitCore 单元测试
+# 2. Xcode 27（iOS 27 SDK）构建 iphoneos Release，不签名，打包 IPA 并检查结构
+# 3. Xcode 26.6（iOS 26 SDK）兼容性构建（不阻塞发布）
+# 4. 把 IPA、日志、Xcode 工程发布到 Releases（预发布），方便在 iPad 上直接下载
+# 构建日志同时推送到 ci-logs/<标签> 分支。
 
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
   workflow_dispatch:
 
 permissions:
@@ -24,16 +29,15 @@ env:
 jobs:
   core-tests:
     name: MoonlitCore 单元测试
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
-      - name: 选择 Xcode 26.6
-        run: sudo xcode-select -s /Applications/Xcode_26.6.app
       - name: 运行测试
         run: |
           mkdir -p logs
-          swift --version | tee logs/core-tests.log
+          swift --version 2>&1 | tee logs/core-tests.log
+          sw_vers | tee -a logs/core-tests.log
           cd Packages/MoonlitCore
           set -o pipefail
           swift test 2>&1 | tee -a ../../logs/core-tests.log
@@ -49,13 +53,11 @@ jobs:
           path: logs/
 
   ios-build:
-    name: iOS 构建（Xcode 26.6）
-    runs-on: macos-26
+    name: iOS 构建（Xcode 27）
+    runs-on: xcode-27
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v5
-      - name: 选择 Xcode 26.6
-        run: sudo xcode-select -s /Applications/Xcode_26.6.app
       - name: 安装 XcodeGen
         run: brew install xcodegen
       - name: 获取 llama.cpp XCFramework
@@ -74,26 +76,50 @@ jobs:
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
-        run: scripts/publish-logs.sh xcode26
-      - name: 打包 Xcode 工程
-        if: always()
-        run: |
-          mkdir -p dist
-          zip -qry dist/MoonlitTavern-XcodeProject.zip . \
-            -x "build/*" "Vendor/*" ".git/*" "dist/*" "logs/*" "Packages/MoonlitCore/.build/*"
-          ls -lh dist
+        run: scripts/publish-logs.sh xcode27
       - name: 汇总产物
         if: always()
         run: |
           mkdir -p dist
+          zip -qry dist/MoonlitTavern-XcodeProject.zip . \
+            -x "build/*" "Vendor/*" ".git/*" "dist/*" "logs/*" "models/*" "*/.build/*" "Tools/EngineHarness/llama.xcframework/*"
           cp build/MoonlitTavern-unsigned.ipa dist/ 2>/dev/null || true
           cp build/MoonlitTavern-unsigned.ipa.sha256 dist/ 2>/dev/null || true
-          (cd logs && zip -qr ../dist/build-logs-xcode26.zip .) || true
+          (cd logs && zip -qr ../dist/build-logs.zip .) || true
+          ls -lh dist
       - uses: actions/upload-artifact@v5
         if: always()
         with:
-          name: ios-build-xcode26
+          name: ios-build
           path: dist/
+
+  ios-build-xcode26:
+    name: 兼容性构建（Xcode 26.6）
+    runs-on: macos-26
+    timeout-minutes: 60
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v5
+      - name: 选择 Xcode 26.6
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app
+      - name: 安装 XcodeGen
+        run: brew install xcodegen
+      - name: 获取 llama.cpp XCFramework
+        run: scripts/fetch-llama.sh
+      - name: 生成 Xcode 工程
+        run: xcodegen generate
+      - name: 构建
+        run: scripts/build-ios.sh
+      - name: 打包并检查 IPA
+        run: |
+          scripts/package-ipa.sh
+          set -o pipefail
+          scripts/verify-ipa.sh build/MoonlitTavern-unsigned.ipa 2>&1 | tee logs/verify-ipa.log
+      - name: 推送日志到 ci-logs 分支
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/publish-logs.sh xcode26
 
   release:
     name: 发布预发布版本
@@ -111,18 +137,18 @@ jobs:
           set -euo pipefail
           TAG="build-${{ github.run_number }}"
           SHORT_SHA="${GITHUB_SHA::7}"
-          cp artifacts/core-tests-log/core-tests.log artifacts/ios-build-xcode26/ 2>/dev/null || true
+          cp artifacts/core-tests-log/core-tests.log artifacts/ios-build/ 2>/dev/null || true
           cat > notes.md <<EOF
-          自动构建 #${{ github.run_number }}（提交 ${SHORT_SHA}）
+          自动构建 #${{ github.run_number }}（提交 ${SHORT_SHA}），Xcode 27 / iOS 27 SDK。
 
           - **MoonlitTavern-unsigned.ipa**：iphoneos Release 构建，**未签名**。需要先用全能签（或其他签名工具）配合你自己的证书与描述文件签名后再安装。
-          - **MoonlitTavern-XcodeProject.zip**：完整源码 + 生成的 Xcode 工程（不含 llama.xcframework，可用 scripts/fetch-llama.sh 下载）。
-          - **build-logs-xcode26.zip**：编译日志、IPA 结构检查日志。
+          - **MoonlitTavern-XcodeProject.zip**：完整源码 + 工程描述（project.yml）。不含 llama.xcframework，可用 scripts/fetch-llama.sh 下载。
+          - **build-logs.zip**：编译日志、IPA 结构检查日志。
           - **core-tests.log**：核心逻辑单元测试输出。
 
           构建记录：${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           EOF
-          gh release create "$TAG" artifacts/ios-build-xcode26/* \
+          gh release create "$TAG" artifacts/ios-build/* \
             --prerelease --target "${GITHUB_SHA}" \
             --title "月下酒馆 构建 #${{ github.run_number }}" \
             --notes-file notes.md
