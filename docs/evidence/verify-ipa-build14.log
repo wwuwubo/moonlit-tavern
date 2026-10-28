@@ -1,15 +1,15 @@
 ✅ Payload/MoonlitTavern.app 存在
 == 顶层文件 ==
-total 10976
-drwxr-xr-x  9 runner  staff      288 Oct 28 23:17 .
-drwxr-xr-x  3 runner  staff       96 Oct 28 23:17 ..
--rw-r--r--  1 runner  staff    15652 Oct 28 23:17 AppIcon60x60@2x.png
--rw-r--r--  1 runner  staff    21448 Oct 28 23:17 AppIcon76x76@2x~ipad.png
--rw-r--r--  1 runner  staff   208552 Oct 28 23:17 Assets.car
-drwxr-xr-x  3 runner  staff       96 Oct 28 23:17 Frameworks
--rw-r--r--  1 runner  staff     1767 Oct 28 23:17 Info.plist
--rwxr-xr-x  1 runner  staff  5358256 Oct 28 23:17 MoonlitTavern
--rw-r--r--  1 runner  staff        8 Oct 28 23:17 PkgInfo
+total 11040
+drwxr-xr-x  9 runner  staff      288 Oct 28 23:36 .
+drwxr-xr-x  3 runner  staff       96 Oct 28 23:36 ..
+-rw-r--r--  1 runner  staff    15652 Oct 28 23:36 AppIcon60x60@2x.png
+-rw-r--r--  1 runner  staff    21448 Oct 28 23:36 AppIcon76x76@2x~ipad.png
+-rw-r--r--  1 runner  staff   208552 Oct 28 23:36 Assets.car
+drwxr-xr-x  3 runner  staff       96 Oct 28 23:36 Frameworks
+-rw-r--r--  1 runner  staff     1767 Oct 28 23:36 Info.plist
+-rwxr-xr-x  1 runner  staff  5390776 Oct 28 23:36 MoonlitTavern
+-rw-r--r--  1 runner  staff        8 Oct 28 23:36 PkgInfo
 ✅ Info.plist 存在
 == Info.plist 关键字段 ==
 CFBundleIdentifier           com.wuwuyou.moonlittavern 
