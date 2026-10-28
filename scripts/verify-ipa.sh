@@ -38,8 +38,18 @@ otool -L "$EXE" | grep -q "@rpath/llama.framework/llama" && pass "主程序链�
 FW="$APP/Frameworks/llama.framework/llama"
 [[ -f "$FW" ]] && pass "Frameworks/llama.framework 已嵌入" || fail "llama.framework 没有嵌入"
 lipo -info "$FW"
-if nm -gU "$FW" | grep -q "ggml_backend_metal_init"; then pass "llama.framework 含 Metal 后端"; else fail "llama.framework 缺少 Metal 后端"; fi
-if nm -gU "$FW" | grep -q "_llama_decode"; then pass "llama.framework 导出 llama_decode"; else fail "缺少 llama_decode 符号"; fi
+SYMS="$WORK/llama-symbols.txt"
+nm -gU "$FW" > "$SYMS" 2>/dev/null || true
+echo "导出符号数：$(wc -l < "$SYMS" | tr -d ' ')"
+if grep -q " _ggml_backend_metal_init$" "$SYMS"; then pass "llama.framework 含 Metal 后端"; else fail "llama.framework 缺少 Metal 后端"; fi
+if grep -q " _llama_decode$" "$SYMS"; then pass "llama.framework 导出 llama_decode"; else fail "缺少 llama_decode 符号"; fi
+# 主程序实际引用的 llama 接口（证明推理代码被编进了 App，而不是空壳）
+nm -u "$EXE" 2>/dev/null | grep -E "_llama_|_ggml_" | sort -u > "$WORK/used.txt" || true
+echo "主程序引用的 llama/ggml 接口（$(wc -l < "$WORK/used.txt" | tr -d ' ') 个）："
+cat "$WORK/used.txt"
+for sym in _llama_model_load_from_file _llama_init_from_model _llama_decode _llama_sampler_sample _llama_tokenize _llama_memory_seq_rm; do
+  grep -q "^ *U ${sym}$\|${sym}$" "$WORK/used.txt" && pass "主程序调用 ${sym}" || fail "主程序没有调用 ${sym}"
+done
 
 echo "== 签名状态 =="
 if codesign -dv "$APP" 2>&1 | grep -q "not signed"; then

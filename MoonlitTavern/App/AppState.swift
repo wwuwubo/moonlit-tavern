@@ -146,10 +146,7 @@ final class AppState: ObservableObject {
             // iPadOS 不允许后台提交 GPU 任务，必须先停下推理
             if generation != nil {
                 let app = UIApplication.shared
-                var taskID: UIBackgroundTaskIdentifier = .invalid
-                taskID = app.beginBackgroundTask(withName: "stop-generation") {
-                    app.endBackgroundTask(taskID)
-                }
+                let taskID = app.beginBackgroundTask(withName: "stop-generation", expirationHandler: nil)
                 stopGeneration()
                 Task {
                     try? await Task.sleep(nanoseconds: 1_500_000_000)
