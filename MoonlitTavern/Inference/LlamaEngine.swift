@@ -453,7 +453,8 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
             llama_sampler_chain_add(chain, llama_sampler_init_greedy())
         } else {
             llama_sampler_chain_add(chain, llama_sampler_init_temp(Float(sampling.temperature)))
-            llama_sampler_chain_add(chain, llama_sampler_init_dist(sampling.seed ?? UInt32.max) // UInt32.max 即 LLAMA_DEFAULT_SEED：随机种子)
+            // UInt32.max 即 LLAMA_DEFAULT_SEED：每次随机
+            llama_sampler_chain_add(chain, llama_sampler_init_dist(sampling.seed ?? UInt32.max))
         }
         // 让重复惩罚看到最近的上下文
         for tok in promptTokens.suffix(max(sampling.repeatLastN, 0)) {
