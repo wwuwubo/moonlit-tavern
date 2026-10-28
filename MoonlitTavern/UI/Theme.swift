@@ -36,6 +36,8 @@ struct AvatarView: View {
                     .resizable()
                     .scaledToFill()
             } else {
+                // 先铺一层不透明底色，群聊头像叠放时不会互相透出来
+                Theme.surfaceRaised
                 LinearGradient(
                     colors: [Theme.surfaceRaised, Theme.amber.opacity(0.35)],
                     startPoint: .topLeading,
@@ -55,14 +57,32 @@ struct AvatarView: View {
 
 /// 「示例」徽章：演示数据必须明确标注。
 struct SampleBadge: View {
+    /// 放在琥珀色高亮背景上时改用深色
+    var onAccent = false
+
     var body: some View {
         Text("示例")
             .font(.caption2.weight(.semibold))
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
-            .background(Capsule().fill(Theme.moon.opacity(0.16)))
-            .foregroundStyle(Theme.moon)
+            .background(Capsule().fill(onAccent ? Theme.background.opacity(0.14) : Theme.moon.opacity(0.16)))
+            .foregroundStyle(onAccent ? Theme.background.opacity(0.8) : Theme.moon)
     }
+}
+
+/// 深色输入框：替代系统 roundedBorder（深色模式下是纯黑方块，和卡片底色不协调）。
+struct MoonFieldStyle: TextFieldStyle {
+    func _body(configuration: TextField<Self._Label>) -> some View {
+        configuration
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Theme.background.opacity(0.7)))
+            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Theme.hairline, lineWidth: 1))
+    }
+}
+
+extension TextFieldStyle where Self == MoonFieldStyle {
+    static var moon: MoonFieldStyle { MoonFieldStyle() }
 }
 
 struct Pill: View {

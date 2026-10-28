@@ -201,28 +201,32 @@ struct ChatRow: View {
     var compact = false
 
     var body: some View {
+        // 选中时系统用琥珀色高亮整行，文字改成深色才看得清
+        let selected = state.selectedChatID == chat.id
         HStack(spacing: 10) {
             if !compact {
-                ZStack {
+                ZStack(alignment: .leading) {
                     ForEach(Array(state.participants(of: chat).prefix(3).enumerated()), id: \.offset) { index, c in
                         AvatarView(name: c.name, imageData: state.avatarData(for: c), size: 26)
-                            .offset(x: CGFloat(index) * 10)
+                            .overlay(Circle().stroke(selected ? Theme.amber : Theme.surface, lineWidth: 2))
+                            .offset(x: CGFloat(index) * 14)
+                            .zIndex(Double(-index))
                     }
                 }
-                .frame(width: 50, alignment: .leading)
+                .frame(width: 54, alignment: .leading)
             }
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     Text(chat.title)
                         .font(compact ? .subheadline : .body)
                         .lineLimit(1)
-                        .foregroundStyle(Theme.textPrimary)
-                    if chat.isSample { SampleBadge() }
+                        .foregroundStyle(selected ? Theme.background : Theme.textPrimary)
+                    if chat.isSample { SampleBadge(onAccent: selected) }
                 }
                 if let last = chat.activePath().last {
                     Text(last.content.replacingOccurrences(of: "\n", with: " "))
                         .font(.caption)
-                        .foregroundStyle(Theme.textTertiary)
+                        .foregroundStyle(selected ? Theme.background.opacity(0.62) : Theme.textTertiary)
                         .lineLimit(1)
                 }
             }

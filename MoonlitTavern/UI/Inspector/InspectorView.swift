@@ -109,13 +109,13 @@ private struct PersonaCard: View {
                 get: { persona.name },
                 set: { value in state.updateChat(chat.id) { $0.persona = UserPersona(name: value, description: persona.description) } }
             ))
-            .textFieldStyle(.roundedBorder)
+            .textFieldStyle(.moon)
             TextField("身份描述（可选）", text: Binding(
                 get: { persona.description },
                 set: { value in state.updateChat(chat.id) { $0.persona = UserPersona(name: persona.name, description: value) } }
             ), axis: .vertical)
             .lineLimit(2...5)
-            .textFieldStyle(.roundedBorder)
+            .textFieldStyle(.moon)
             if chat.persona != nil {
                 Button("恢复为全局身份") { state.updateChat(chat.id) { $0.persona = nil } }
                     .font(.caption)
@@ -205,8 +205,8 @@ private struct LorePanel: View {
                     }
                 }
                 HStack {
-                    TextField("名称，如 月相", text: $newStateKey).textFieldStyle(.roundedBorder)
-                    TextField("值，如 满月", text: $newStateValue).textFieldStyle(.roundedBorder)
+                    TextField("名称，如 月相", text: $newStateKey).textFieldStyle(.moon)
+                    TextField("值，如 满月", text: $newStateValue).textFieldStyle(.moon)
                     Button {
                         let k = newStateKey.trimmed
                         guard !k.isEmpty else { return }
@@ -263,7 +263,7 @@ private struct AuthorsNoteCard: View {
                 set: { v in state.updateChat(chat.id) { $0.authorsNote.text = v } }
             ), axis: .vertical)
             .lineLimit(2...6)
-            .textFieldStyle(.roundedBorder)
+            .textFieldStyle(.moon)
             Stepper("插入深度：倒数第 \(chat.authorsNote.depth) 条之前", value: Binding(
                 get: { chat.authorsNote.depth },
                 set: { v in state.updateChat(chat.id) { $0.authorsNote.depth = v } }
@@ -320,7 +320,7 @@ private struct MemoryPanel: View {
                 .pickerStyle(.segmented)
                 TextField("例如：旅人答应过艾琳，绝不在满月夜打开窗户", text: $newText, axis: .vertical)
                     .lineLimit(2...5)
-                    .textFieldStyle(.roundedBorder)
+                    .textFieldStyle(.moon)
                 Button("添加") {
                     let text = newText.trimmed
                     guard !text.isEmpty else { return }

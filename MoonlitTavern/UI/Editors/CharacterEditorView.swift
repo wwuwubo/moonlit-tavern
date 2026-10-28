@@ -31,11 +31,11 @@ struct CharacterEditorView: View {
                     header
                     SectionCard(title: "基本信息") {
                         TextField("名字（必填）", text: $draft.name)
-                            .textFieldStyle(.roundedBorder)
+                            .textFieldStyle(.moon)
                         TextField("昵称 / 显示名（可选）", text: $draft.nickname)
-                            .textFieldStyle(.roundedBorder)
+                            .textFieldStyle(.moon)
                         TextField("标签，用逗号分隔", text: $tagsText)
-                            .textFieldStyle(.roundedBorder)
+                            .textFieldStyle(.moon)
                         LabeledEditor(title: "人物简介 / 核心设定（description）", text: $draft.description,
                                       placeholder: "外貌、身份、处境……这是模型了解角色的主要依据", minHeight: 120)
                     }
@@ -73,8 +73,8 @@ struct CharacterEditorView: View {
                     }
                     SectionCard(title: "其他") {
                         LabeledEditor(title: "作者备注（creator notes，不发给模型）", text: $draft.creatorNotes, minHeight: 60)
-                        TextField("作者", text: $draft.creator).textFieldStyle(.roundedBorder)
-                        TextField("版本", text: $draft.characterVersion).textFieldStyle(.roundedBorder)
+                        TextField("作者", text: $draft.creator).textFieldStyle(.moon)
+                        TextField("版本", text: $draft.characterVersion).textFieldStyle(.moon)
                         VStack(alignment: .leading) {
                             Text("群聊积极度 \(Int(draft.talkativeness * 100))%").font(.caption)
                             Slider(value: $draft.talkativeness, in: 0...1)
