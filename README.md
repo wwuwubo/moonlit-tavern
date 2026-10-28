@@ -76,6 +76,7 @@ Releases 里的 `MoonlitTavern-unsigned.ipa` **没有签名**，需要用全能�
 - [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md)：已知问题
 - [docs/ROADMAP.md](docs/ROADMAP.md)：后续路线
 - `docs/evidence/`：测试日志与截图
+- `docs/deliverables/`：《安装与使用指南》《交付与测试报告》（Word 与 PDF）
 
 ## 许可
 
