@@ -109,6 +109,9 @@ final class StreamingTests: XCTestCase {
         XCTAssertEqual("思考中</think>答".strippingThinkBlocks(), "答")
         XCTAssertEqual(ResponseSanitizer.clean("*她笑了。* 要是敢在满月那*", speakerName: "A"), "*她笑了。* 要是敢在满月那")
         XCTAssertEqual(ResponseSanitizer.clean("*她笑了。*", speakerName: "A"), "*她笑了。*")
+        XCTAssertEqual(ResponseSanitizer.clean("好。*她伸手勾了勾门框", speakerName: "A"), "好。*她伸手勾了勾门框*")
+        XCTAssertEqual(ResponseSanitizer.clean("清单：\n* 第一项", speakerName: "A"), "清单：\n* 第一项", "列表标记不补星号")
+        XCTAssertEqual(ResponseSanitizer.clean("**重点** 还有", speakerName: "A"), "**重点** 还有")
     }
 }
 
