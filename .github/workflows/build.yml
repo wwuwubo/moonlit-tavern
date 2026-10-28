@@ -27,7 +27,7 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: 选择 Xcode 26.6
         run: sudo xcode-select -s /Applications/Xcode_26.6.app
       - name: 运行测试
@@ -37,7 +37,12 @@ jobs:
           cd Packages/MoonlitCore
           set -o pipefail
           swift test 2>&1 | tee -a ../../logs/core-tests.log
-      - uses: actions/upload-artifact@v4
+      - name: 推送日志到 ci-logs 分支
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/publish-logs.sh core-tests
+      - uses: actions/upload-artifact@v5
         if: always()
         with:
           name: core-tests-log
@@ -48,7 +53,7 @@ jobs:
     runs-on: macos-26
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: 选择 Xcode 26.6
         run: sudo xcode-select -s /Applications/Xcode_26.6.app
       - name: 安装 XcodeGen
@@ -65,6 +70,11 @@ jobs:
         run: |
           set -o pipefail
           scripts/verify-ipa.sh build/MoonlitTavern-unsigned.ipa 2>&1 | tee logs/verify-ipa.log
+      - name: 推送日志到 ci-logs 分支
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/publish-logs.sh xcode26
       - name: 打包 Xcode 工程
         if: always()
         run: |
@@ -79,7 +89,7 @@ jobs:
           cp build/MoonlitTavern-unsigned.ipa dist/ 2>/dev/null || true
           cp build/MoonlitTavern-unsigned.ipa.sha256 dist/ 2>/dev/null || true
           (cd logs && zip -qr ../dist/build-logs-xcode26.zip .) || true
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         if: always()
         with:
           name: ios-build-xcode26
@@ -90,7 +100,7 @@ jobs:
     needs: [core-tests, ios-build]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           path: artifacts
       - name: 创建 Release

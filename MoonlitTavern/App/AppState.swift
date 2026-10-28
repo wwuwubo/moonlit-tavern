@@ -85,14 +85,16 @@ final class AppState: ObservableObject {
     init() {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         let root = support.appendingPathComponent("MoonlitTavern", isDirectory: true)
+        let opened: TavernStore
         do {
-            store = try TavernStore(root: root)
+            opened = try TavernStore(root: root)
         } catch {
             // 沙盒目录无法创建属于系统级故障，退回临时目录保证能启动
-            store = try! TavernStore(root: FileManager.default.temporaryDirectory.appendingPathComponent("MoonlitTavern"))
+            opened = try! TavernStore(root: FileManager.default.temporaryDirectory.appendingPathComponent("MoonlitTavern"))
         }
-        let firstLaunch = store.isFirstLaunch
-        settings = store.loadSettings()
+        let firstLaunch = opened.isFirstLaunch
+        store = opened
+        settings = opened.loadSettings()
         characters = store.loadCharacters()
         chats = store.loadChats()
         lorebooks = store.loadLorebooks()

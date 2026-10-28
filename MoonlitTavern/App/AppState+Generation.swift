@@ -187,8 +187,8 @@ extension AppState {
     func snapshot(_ plan: PromptPlan, engine: String) -> PlanSnapshot {
         PlanSnapshot(
             report: plan.report,
-            loreIncluded: plan.lore.included.map { ($0.entry.title, $0.bookName, $0.reason.label, $0.tokens) },
-            loreDropped: plan.lore.dropped.map { ($0.activation.entry.title, $0.reason.rawValue) },
+            loreIncluded: plan.lore.included.map { (title: $0.entry.title, book: $0.bookName, reason: $0.reason.label, tokens: $0.tokens) },
+            loreDropped: plan.lore.dropped.map { (title: $0.activation.entry.title, reason: $0.reason.rawValue) },
             memoryIDs: plan.report.includedMemoryIDs,
             promptPreview: plan.messages,
             prefill: plan.prefill,

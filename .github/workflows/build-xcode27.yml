@@ -8,6 +8,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 concurrency:
   group: build-xcode27-${{ github.ref }}
   cancel-in-progress: true
@@ -22,7 +25,7 @@ jobs:
     runs-on: xcode-27
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: 安装 XcodeGen
         run: brew install xcodegen
       - name: 获取 llama.cpp XCFramework
@@ -36,13 +39,18 @@ jobs:
           scripts/package-ipa.sh
           set -o pipefail
           scripts/verify-ipa.sh build/MoonlitTavern-unsigned.ipa 2>&1 | tee logs/verify-ipa.log
+      - name: 推送日志到 ci-logs 分支
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/publish-logs.sh xcode27
       - name: 汇总
         if: always()
         run: |
           mkdir -p dist
           cp build/MoonlitTavern-unsigned.ipa dist/MoonlitTavern-unsigned-xcode27.ipa 2>/dev/null || true
           (cd logs && zip -qr ../dist/build-logs-xcode27.zip .) || true
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         if: always()
         with:
           name: ios-build-xcode27

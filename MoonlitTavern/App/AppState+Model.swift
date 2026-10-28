@@ -40,7 +40,7 @@ struct BenchmarkResult: Codable, Identifiable, Hashable {
     /// 以 Markdown 表格行导出，便于贴进测试报告。
     var markdownRow: String {
         let footprint = footprintMB.map { String(format: "%.0f", $0) } ?? "-"
-        return String(format: "| %@ | %@ | %@ | %d | %@ | %d | %d | %.2f | %.1f | %.1f | %@ | %@ | %@ |",
+        return String(format: "| %@ | %@ | %@ | %ld | %@ | %ld | %ld | %.2f | %.1f | %.1f | %@ | %@ | %@ |",
                       date.formatted(date: .numeric, time: .shortened), kind, modelFile, contextLength, kvCache,
                       promptTokens, generatedTokens, timeToFirstToken, promptTokensPerSecond, generationTokensPerSecond,
                       footprint, thermal, succeeded ? "成功" : "失败：\(note)")

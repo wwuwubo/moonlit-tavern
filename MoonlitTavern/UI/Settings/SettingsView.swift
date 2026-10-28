@@ -254,7 +254,7 @@ private struct ModelRow: View {
                     if let shape = model.shapeDescription {
                         Text(shape).font(.caption2).foregroundStyle(Theme.textTertiary)
                     }
-                    Text(String(format: "理论估算 %d 上下文：约 %.1f GB（权重 %.1f + KV %.2f + 计算 %.2f + 应用 %.2f）",
+                    Text(String(format: "理论估算 %ld 上下文：约 %.1f GB（权重 %.1f + KV %.2f + 计算 %.2f + 应用 %.2f）",
                                 ctx, estimate.totalMB / 1024, estimate.weightsMB / 1024, estimate.kvCacheMB / 1024,
                                 estimate.computeMB / 1024, estimate.overheadMB / 1024))
                         .font(.caption2)

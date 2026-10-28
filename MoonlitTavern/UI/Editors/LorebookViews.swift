@@ -36,7 +36,8 @@ struct LorebookListView: View {
                 }
             }
             .onDelete { offsets in
-                for i in offsets { state.deleteLorebook(state.lorebooks[i].id) }
+                let ids = offsets.map { state.lorebooks[$0].id }
+                ids.forEach { state.deleteLorebook($0) }
             }
         }
         .navigationTitle("世界书")
