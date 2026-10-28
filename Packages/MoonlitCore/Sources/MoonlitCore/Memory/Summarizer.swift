@@ -28,18 +28,26 @@ public enum Summarizer {
         userName: String
     ) -> [PromptMessage] {
         let transcript = messages.map { "\($0.speakerName)：\($0.content.trimmed)" }.joined(separator: "\n")
-        var system = """
-        你是一名严谨的剧情记录员。阅读角色扮演对话片段，提炼需要长期记住的信息。只依据原文，不要编造。
-        严格按以下格式输出，不要输出其他内容：
-        摘要：（两到四句话，概括这段剧情，使用第三人称）
+        let names = characterNames.joined(separator: "、")
+        let example = characterNames.first ?? "角色"
+        let system = """
+        你是一名严谨的剧情记录员。阅读角色扮演对话片段，提炼需要长期记住的信息。只依据原文，不要编造，不要照抄格式说明。
+        出场角色：\(names)；用户扮演：\(userName)。
+        按下面四个小节输出，不要输出其他内容。某一节没有内容时写「无」。
+        摘要：用两到四句话、第三人称概括这段剧情。
+        事件：每行一条，以「- 」开头，最多五条。
+        关系：每行一条，格式「- 名字→名字：关系或态度的变化」，最多四条。
+        状态：每行一条，格式「- 名称=取值」，记录地点、时间等剧情状态。
+
+        参考写法（内容是虚构的，只看格式）：
+        摘要：\(example)在雨夜收留了\(userName)，两人谈起北方的战事。
         事件：
-        - （关键事件，每行一条，最多五条；没有就写「无」）
+        - \(userName)交出了一封密信
         关系：
-        - 甲→乙：关系或态度的变化（最多四条；没有就写「无」）
+        - \(example)→\(userName)：从戒备转为信任
         状态：
-        - 键=值（剧情状态，例如 地点=王都酒馆、时间=深夜；没有就写「无」）
+        - 地点=城门口
         """
-        system += "\n出场角色：\(characterNames.joined(separator: "、"))；用户扮演：\(userName)。"
         var user = ""
         if let previous = previousSummary, !previous.isBlank {
             user += "此前的摘要（供参考，不要重复）：\n\(previous.trimmed)\n\n"
@@ -82,9 +90,11 @@ public enum Summarizer {
             }
             let item = stripBullet(line)
             if isNone(item) { continue }
+            if item.hasPrefix("出场角色") || item.hasPrefix("参考写法") { continue }
             switch section {
             case .none, .summary: summaryLines.append(item)
-            case .events: result.events.append(item)
+            case .events:
+                if !item.contains("每行一条") && !item.contains("关键事件") { result.events.append(item) }
             case .relations: if let rel = parseRelationship(item) { result.relationships.append(rel) }
             case .state: parseState(item, into: &result.stateUpdates)
             }
@@ -155,6 +165,9 @@ public enum Summarizer {
         ["无", "无。", "暂无", "none", "None", "N/A", "-"].contains(s.trimmed)
     }
 
+    /// 小模型偶尔会照抄格式说明里的占位词，这些不是剧情信息。
+    static let placeholderTerms: Set<String> = ["甲", "乙", "键", "值", "名字", "名称", "取值", "某人"]
+
     static func parseRelationship(_ s: String) -> Result.Relationship? {
         let line = stripBullet(s)
         let arrows = ["→", "->", "=>", "对"]
@@ -166,7 +179,8 @@ public enum Summarizer {
             guard let sep = sepRange else { continue }
             let object = String(rest[..<sep.lowerBound]).trimmed
             let state = String(rest[sep.upperBound...]).trimmed
-            if !subject.isEmpty, !object.isEmpty, !state.isEmpty {
+            if !subject.isEmpty, !object.isEmpty, !state.isEmpty,
+               !placeholderTerms.contains(subject), !placeholderTerms.contains(object), !state.contains("关系或态度") {
                 return Result.Relationship(subject: subject, object: object, state: state)
             }
         }
@@ -176,7 +190,8 @@ public enum Summarizer {
     static func parseState(_ s: String, into dict: inout [String: String]) {
         for part in stripBullet(s).components(separatedBy: CharacterSet(charactersIn: "，,；;")) {
             let pair = part.split(separator: "=", maxSplits: 1).map { String($0).trimmed }
-            if pair.count == 2, !pair[0].isEmpty, !pair[1].isEmpty {
+            if pair.count == 2, !pair[0].isEmpty, !pair[1].isEmpty,
+               !placeholderTerms.contains(pair[0]), !placeholderTerms.contains(pair[1]) {
                 dict[pair[0]] = pair[1]
             }
         }

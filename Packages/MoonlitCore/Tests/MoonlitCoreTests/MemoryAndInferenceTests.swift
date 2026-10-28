@@ -74,6 +74,24 @@ final class MemoryTests: XCTestCase {
         XCTAssertTrue(Summarizer.parse("   ").isEmpty)
     }
 
+    func testPlaceholderEchoIsIgnored() {
+        // 真实模型输出（Qwen3-0.6B 在 CI 实测中照抄了格式占位词）
+        let output = """
+        摘要：艾琳向旅人介绍三晚住宿和钟楼房间，同时暗示钟楼封印可能松动。
+        事件：
+        - 艾琳推荐三晚住宿并提供钟楼方向房间。
+        关系：
+        - 甲→乙：艾琳态度转变，从建议到提供信息。
+        状态：
+        - 地点=王都酒馆；时间=深夜；键=值。
+        出场角色：艾琳；用户扮演：旅人。
+        """
+        let r = Summarizer.parse(output)
+        XCTAssertEqual(r.events.count, 1)
+        XCTAssertTrue(r.relationships.isEmpty, "甲→乙 是占位词，不是剧情信息")
+        XCTAssertEqual(r.stateUpdates, ["地点": "王都酒馆", "时间": "深夜"])
+    }
+
     func testMergeRelationshipsKeepsLatest() {
         var memory = ChatMemory(chatID: UUID())
         let first = Summarizer.memoryItems(from: .init(summary: "s1", events: ["e1"], relationships: [.init(subject: "A", object: "B", state: "陌生")], stateUpdates: [:]), messageIndex: 10)

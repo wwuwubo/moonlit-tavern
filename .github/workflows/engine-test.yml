@@ -1,26 +1,28 @@
 name: Engine Test
 
 # 用真实 GGUF 模型在 Apple Silicon Mac 上运行 App 的推理引擎代码（LlamaEngine.swift 原样编译）。
-# 这一步证明推理路径本身能工作：加载、流式生成、停止、KV 缓存续用、群聊停止词、记忆摘要、长上下文。
-# 注意：这是 GitHub 的 macOS 虚拟机，不是 iPad；速度和内存数字不能代表 M4 iPad Pro。
+# 验证推理路径本身：加载、流式生成、停止、KV 缓存续用、群聊停止词、记忆摘要、长上下文。
+# 这是 GitHub 的 macOS 虚拟机（Paravirtual GPU），不是 iPad；速度数字不能代表 M4 iPad Pro。
+# 只在手动触发时运行，避免消耗私有仓库的 Actions 额度。
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "MoonlitTavern/Inference/**"
-      - "Packages/MoonlitCore/**"
-      - "Tools/EngineHarness/**"
-      - "scripts/run-engine-harness.sh"
-      - ".github/workflows/engine-test.yml"
   workflow_dispatch:
+    inputs:
+      label:
+        description: "标签（用于日志分支名）"
+        required: true
+        default: qwen35-0.8b
+      url:
+        description: "GGUF 下载地址"
+        required: true
+        default: https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF/resolve/main/Qwen3.5-0.8B-Q4_K_M.gguf
+      ctx:
+        description: "上下文长度"
+        required: true
+        default: "4096"
 
 permissions:
   contents: write
-
-concurrency:
-  group: engine-test-${{ github.ref }}
-  cancel-in-progress: true
 
 env:
   LLAMA_TAG: b11960
@@ -28,22 +30,9 @@ env:
 
 jobs:
   engine:
-    name: 推理实测 · ${{ matrix.label }}
+    name: 推理实测 · ${{ inputs.label }}
     runs-on: xcode-27
-    timeout-minutes: 60
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - label: qwen35-0.8b
-            url: https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF/resolve/main/Qwen3.5-0.8B-Q4_K_M.gguf
-            ctx: 8192
-          - label: qwen3-0.6b
-            url: https://huggingface.co/Qwen/Qwen3-0.6B-GGUF/resolve/main/Qwen3-0.6B-Q8_0.gguf
-            ctx: 8192
-          - label: qwen35-4b
-            url: https://huggingface.co/unsloth/Qwen3.5-4B-GGUF/resolve/main/Qwen3.5-4B-Q4_K_M.gguf
-            ctx: 8192
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v5
       - name: 获取 llama.cpp XCFramework
@@ -52,16 +41,11 @@ jobs:
         uses: actions/cache@v4
         with:
           path: models
-          key: model-${{ matrix.label }}-${{ hashFiles('.github/workflows/engine-test.yml') }}
+          key: model-${{ inputs.label }}
       - name: 运行推理实测
-        run: scripts/run-engine-harness.sh "${{ matrix.url }}" "${{ matrix.label }}" "${{ matrix.ctx }}"
+        run: scripts/run-engine-harness.sh "${{ inputs.url }}" "${{ inputs.label }}" "${{ inputs.ctx }}"
       - name: 推送日志到 ci-logs 分支
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
-        run: scripts/publish-logs.sh engine-${{ matrix.label }}
-      - uses: actions/upload-artifact@v5
-        if: always()
-        with:
-          name: engine-${{ matrix.label }}
-          path: logs/
+        run: scripts/publish-logs.sh engine-${{ inputs.label }}
