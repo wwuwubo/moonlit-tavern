@@ -1,0 +1,4 @@
+run: 1 (40746445225)
+sha: d9f33b5bc0e9cfbca518d1423d668e6f72201edd
+label: engine-qwen35-4b
+date: 2026-10-28T18:47:42Z
