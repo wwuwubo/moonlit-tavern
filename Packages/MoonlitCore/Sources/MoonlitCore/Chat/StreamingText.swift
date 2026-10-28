@@ -165,6 +165,10 @@ public enum ResponseSanitizer {
         for prefix in ["\(speakerName)：", "\(speakerName):", "**\(speakerName)**：", "**\(speakerName):**"] where s.hasPrefix(prefix) {
             s = String(s.dropFirst(prefix.count)).trimmed
         }
+        // 小模型常在结尾留下一个没配对的星号（动作描写没写完就停了）
+        if s.hasSuffix("*"), s.filter({ $0 == "*" }).count % 2 == 1 {
+            s = String(s.dropLast()).trimmed
+        }
         return s
     }
 }

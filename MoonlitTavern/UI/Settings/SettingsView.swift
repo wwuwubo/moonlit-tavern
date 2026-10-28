@@ -213,7 +213,8 @@ struct LoadedModelCard: View {
                 loadButtons
             }
             HStack(spacing: 12) {
-                Text(String(format: "系统允许本应用再使用约 %.0f MB", DeviceMetrics.availableMemoryMB()))
+                let available = DeviceMetrics.availableMemoryMB()
+                Text(available > 0 ? String(format: "系统允许本应用再使用约 %.0f MB", available) : "系统未提供单应用内存上限")
                 Text(String(format: "物理内存 %.0f GB", DeviceMetrics.physicalMemoryMB / 1024))
             }
             .font(.caption2)
@@ -508,7 +509,7 @@ struct DiagnosticsView: View {
                 LabeledContent("设备", value: AppState.deviceModelIdentifier())
                 LabeledContent("系统", value: "iPadOS " + AppState.systemVersionString())
                 LabeledContent("物理内存", value: String(format: "%.1f GB", DeviceMetrics.physicalMemoryMB / 1024))
-                LabeledContent("应用可用内存", value: String(format: "%.0f MB", DeviceMetrics.availableMemoryMB()))
+                LabeledContent("应用可用内存", value: DeviceMetrics.availableMemoryMB() > 0 ? String(format: "%.0f MB", DeviceMetrics.availableMemoryMB()) : "未提供")
                 LabeledContent("进程内存", value: DeviceMetrics.footprintMB().map { String(format: "%.0f MB", $0) } ?? "未知")
                 LabeledContent("温度状态", value: DeviceMetrics.thermalLabel)
                 LabeledContent("应用版本", value: AppState.appVersion)

@@ -107,6 +107,8 @@ final class StreamingTests: XCTestCase {
         XCTAssertEqual(ResponseSanitizer.clean("  艾琳：你好  ", speakerName: "艾琳"), "你好")
         XCTAssertEqual(ResponseSanitizer.clean("<think>x</think>\n回答", speakerName: "A"), "回答")
         XCTAssertEqual("思考中</think>答".strippingThinkBlocks(), "答")
+        XCTAssertEqual(ResponseSanitizer.clean("*她笑了。* 要是敢在满月那*", speakerName: "A"), "*她笑了。* 要是敢在满月那")
+        XCTAssertEqual(ResponseSanitizer.clean("*她笑了。*", speakerName: "A"), "*她笑了。*")
     }
 }
 

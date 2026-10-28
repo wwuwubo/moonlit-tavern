@@ -21,6 +21,7 @@ struct ChatView: View {
                 Divider().overlay(Theme.hairline)
                 composer(chat: chat)
             }
+            .background(Theme.background.ignoresSafeArea())
             .navigationTitle(chat.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbar(chat: chat) }
@@ -417,7 +418,7 @@ struct StatsLine: View {
                     Text(String(format: "内存 %.0f MB", mem))
                 }
             } else {
-                Text("⌘↩ 发送 · ⌘. 停止 · 空输入时让角色继续")
+                Text("⌘ Return 发送 · ⌘ . 停止 · 空输入时让角色继续")
             }
             Spacer()
             if state.thermalLabel != "正常" {
