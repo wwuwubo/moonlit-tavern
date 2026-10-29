@@ -65,6 +65,14 @@ final class DocumentPicker: NSObject, UIDocumentPickerDelegate {
             await prepare?()
             // 从菜单里触发时，菜单还在收起；稍等再弹出，避免两次呈现撞在一起被 UIKit 拒绝
             try? await Task.sleep(nanoseconds: 350_000_000)
+            // 上一层（导入页等）的收起动画还没走完时再等等，最多 2 秒：撞上转场时选择器可能只弹出一个空壳
+            var waited = 0
+            while waited < 20, let top = topViewController(),
+                  top.transitionCoordinator != nil || top.presentedViewController?.isBeingDismissed == true {
+                try? await Task.sleep(nanoseconds: 100_000_000)
+                waited += 1
+            }
+            if waited > 0 { EngineLog.shared.append("文档选择器：等上一层收起 \(waited * 100) 毫秒") }
             guard let top = topViewController() else {
                 EngineLog.shared.append("文档选择器：找不到可用于弹出的界面")
                 active = nil
