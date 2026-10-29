@@ -72,6 +72,8 @@ public struct ChatMessage: Codable, Identifiable, Hashable, Sendable {
     /// 隐藏后不进入提示词，但保留在记录里。
     public var isHidden: Bool
     public var stats: GenerationStats?
+    /// 这条角色回复之后给用户的剧情选项。刷新选项只改这里，不动回复正文。
+    public var suggestions: [String]?
 
     public init(
         id: UUID = UUID(),
@@ -83,7 +85,8 @@ public struct ChatMessage: Codable, Identifiable, Hashable, Sendable {
         createdAt: Date = Date(),
         editedAt: Date? = nil,
         isHidden: Bool = false,
-        stats: GenerationStats? = nil
+        stats: GenerationStats? = nil,
+        suggestions: [String]? = nil
     ) {
         self.id = id
         self.parentID = parentID
@@ -95,6 +98,7 @@ public struct ChatMessage: Codable, Identifiable, Hashable, Sendable {
         self.editedAt = editedAt
         self.isHidden = isHidden
         self.stats = stats
+        self.suggestions = suggestions
     }
 }
 

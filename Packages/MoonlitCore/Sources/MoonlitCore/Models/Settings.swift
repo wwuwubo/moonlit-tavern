@@ -167,6 +167,27 @@ public struct MemorySettings: Codable, Hashable, Sendable {
     }
 }
 
+/// 剧情选项：角色回复后，替用户想几个下一步的选择。
+public struct SuggestionSettings: Codable, Hashable, Sendable {
+    /// 每次回复后自动生成
+    public var enabled: Bool
+    /// 选项个数（2–4）
+    public var count: Int
+
+    public init(enabled: Bool = true, count: Int = 3) {
+        self.enabled = enabled
+        self.count = count
+    }
+
+    enum CodingKeys: String, CodingKey { case enabled, count }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        enabled = try c.decodeIfPresent(Bool.self, forKey: .enabled) ?? true
+        count = min(max(try c.decodeIfPresent(Int.self, forKey: .count) ?? 3, 2), 4)
+    }
+}
+
 public struct AppSettings: Codable, Hashable, Sendable {
     public var providerMode: ProviderMode
     public var local: LocalModelSettings
@@ -181,6 +202,8 @@ public struct AppSettings: Codable, Hashable, Sendable {
     public var loreTokenBudget: Int
     /// 是否在提示词中放入示例对话。
     public var includeExampleDialogue: Bool
+    /// 剧情选项
+    public var suggestions: SuggestionSettings
 
     public init(
         providerMode: ProviderMode = .local,
@@ -192,7 +215,8 @@ public struct AppSettings: Codable, Hashable, Sendable {
         defaultSystemPrompt: String = AppSettings.builtinSystemPrompt,
         memory: MemorySettings = MemorySettings(),
         loreTokenBudget: Int = 900,
-        includeExampleDialogue: Bool = true
+        includeExampleDialogue: Bool = true,
+        suggestions: SuggestionSettings = SuggestionSettings()
     ) {
         self.providerMode = providerMode
         self.local = local
@@ -204,6 +228,7 @@ public struct AppSettings: Codable, Hashable, Sendable {
         self.memory = memory
         self.loreTokenBudget = loreTokenBudget
         self.includeExampleDialogue = includeExampleDialogue
+        self.suggestions = suggestions
     }
 
     /// 实际使用的回复长度。
@@ -223,7 +248,7 @@ public struct AppSettings: Codable, Hashable, Sendable {
 
     enum CodingKeys: String, CodingKey {
         case providerMode, local, cloud, sampling, replyLength, persona, defaultSystemPrompt, memory
-        case loreTokenBudget, includeExampleDialogue
+        case loreTokenBudget, includeExampleDialogue, suggestions
     }
 
     public init(from decoder: Decoder) throws {
@@ -238,5 +263,6 @@ public struct AppSettings: Codable, Hashable, Sendable {
         memory = try c.decodeIfPresent(MemorySettings.self, forKey: .memory) ?? MemorySettings()
         loreTokenBudget = try c.decodeIfPresent(Int.self, forKey: .loreTokenBudget) ?? 900
         includeExampleDialogue = try c.decodeIfPresent(Bool.self, forKey: .includeExampleDialogue) ?? true
+        suggestions = try c.decodeIfPresent(SuggestionSettings.self, forKey: .suggestions) ?? SuggestionSettings()
     }
 }

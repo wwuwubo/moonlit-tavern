@@ -36,6 +36,8 @@ public struct PromptPlan: Sendable {
     public var historyAnchor: Int
     /// 掉出窗口、尚未被摘要覆盖的消息，用于触发自动摘要。
     public var truncatedMessages: [ChatMessage]
+    /// messages 末尾跟在聊天历史后面的指令条数（历史后指令、群聊发言提示）
+    public var tailCount: Int = 0
 }
 
 public struct PromptContext {
@@ -287,7 +289,8 @@ public struct PromptBuilder {
             report: report,
             lore: lore,
             historyAnchor: anchor,
-            truncatedMessages: Array(truncated)
+            truncatedMessages: Array(truncated),
+            tailCount: tailMessages.count
         )
     }
 

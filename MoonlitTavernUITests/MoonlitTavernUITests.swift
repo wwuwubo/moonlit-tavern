@@ -45,20 +45,79 @@ final class MoonlitTavernUITests: XCTestCase {
         }
     }
 
-    /// 打开「+ › 导入角色卡」，在文档选择器里找到测试角色卡并选中，确认侧栏出现新角色。
-    private func importCardThroughPicker(_ app: XCUIApplication) {
+    // MARK: - 通用步骤
+
+    private var genTimeout: TimeInterval { Double(env["MOONLIT_GEN_TIMEOUT"] ?? "600") ?? 600 }
+
+    private func messages(_ app: XCUIApplication, _ role: String) -> XCUIElementQuery {
+        app.descendants(matching: .any).matching(identifier: "message-\(role)")
+    }
+
+    /// 等回复生成完：停止按钮消失、助手消息数超过 before。返回用时与新的消息数。
+    private func waitForReply(_ app: XCUIApplication, after before: Int) -> (TimeInterval, Int) {
+        let start = Date()
+        let stop = element(app, "stopButton")
+        _ = stop.waitForExistence(timeout: 30)
+        let deadline = Date().addingTimeInterval(genTimeout)
+        while Date() < deadline {
+            if !stop.exists && count(app, "message-assistant") > before { break }
+            sleep(2)
+        }
+        return (Date().timeIntervalSince(start), count(app, "message-assistant"))
+    }
+
+    private func suggestionLabels(_ app: XCUIApplication) -> [String] {
+        (0..<4).compactMap { i in
+            let e = element(app, "suggestion-\(i)")
+            return e.exists ? e.label : nil
+        }
+    }
+
+    /// 等剧情选项出现（生成中提示消失且至少有两个选项）。
+    private func waitForSuggestions(_ app: XCUIApplication, timeout: TimeInterval = 120) -> [String] {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            let labels = suggestionLabels(app)
+            if labels.count >= 2 && !element(app, "suggestionsWorking").exists { return labels }
+            sleep(2)
+        }
+        return suggestionLabels(app)
+    }
+
+    private func openCardImport(_ app: XCUIApplication) -> Bool {
         let add = element(app, "addMenu")
-        guard add.waitForExistence(timeout: 10) else { log("导入角色卡：找不到「+」按钮"); return }
+        guard add.waitForExistence(timeout: 10) else { log("导入：找不到「+」按钮"); return false }
         add.tap()
-        let item = app.buttons["导入角色卡（PNG / JSON）"]
-        guard item.waitForExistence(timeout: 5) else { log("导入角色卡：菜单里没有导入项"); return }
+        let item = element(app, "importCardMenuItem")
+        guard item.waitForExistence(timeout: 5) else { log("导入：菜单里没有导入项"); return false }
         item.tap()
-        sleep(4)
-        save("12-文档选择器", app)
+        return element(app, "pickCardFileButton").waitForExistence(timeout: 10)
+    }
+
+    /// 从「我的 iPad › 月下酒馆 › 角色卡」文件夹列表导入（不经过系统文件选择器）。
+    private func importCardFromFolder(_ app: XCUIApplication) {
+        XCTAssertTrue(openCardImport(app), "导入界面没有打开")
+        let row = element(app, "folder-card-uitest-card.json")
+        let listed = row.waitForExistence(timeout: 10)
+        log("文件夹导入：列表里有 uitest-card.json：\(listed)")
+        save("12-导入界面", app)
+        XCTAssertTrue(listed, "角色卡文件夹列表里没有测试卡")
+        guard listed else { return }
+        row.tap()
+        let imported = app.staticTexts["测试旅者"].waitForExistence(timeout: 15)
+        log("文件夹导入：侧栏出现「测试旅者」：\(imported)")
+        XCTAssertTrue(imported, "从文件夹导入角色卡失败")
+    }
+
+    /// 通过系统文档选择器导入：我的 iPad › 月下酒馆 › 角色卡 › uitest-picker.json
+    private func importCardThroughPicker(_ app: XCUIApplication) {
+        XCTAssertTrue(openCardImport(app), "导入界面没有打开")
+        element(app, "pickCardFileButton").tap()
+        sleep(3)
 
         // 选择器里的文件夹和文件是集合视图的单元格，标签后面会带「2 items」、日期、大小等信息，
         // 所以按前缀匹配；位置列表按完整标签匹配
-        func tapFirst(_ labels: [String], prefix: Bool = false, timeout: TimeInterval = 8) -> String? {
+        func tapFirst(_ labels: [String], prefix: Bool = false, timeout: TimeInterval = 10) -> String? {
             let deadline = Date().addingTimeInterval(timeout)
             let format = prefix ? "label BEGINSWITH %@" : "label == %@"
             while Date() < deadline {
@@ -77,27 +136,30 @@ final class MoonlitTavernUITests: XCTestCase {
             }
             return nil
         }
-        // iPad 上的选择器左侧是位置列表；有的系统版本要先点「浏览」
         _ = tapFirst(["Browse", "浏览"], timeout: 3)
         let location = tapFirst(["On My iPad", "我的 iPad", "在我的 iPad 上"])
-        log("导入角色卡：位置 \(location ?? "未找到")")
+        log("选择器导入：位置 \(location ?? "未找到")")
         sleep(1)
-        let folder = tapFirst(["月下酒馆", "MoonlitTavern"], prefix: true)
-        log("导入角色卡：文件夹 \(folder ?? "未找到")")
+        let appFolder = tapFirst(["月下酒馆", "MoonlitTavern"], prefix: true)
+        log("选择器导入：App 文件夹 \(appFolder ?? "未找到")")
         sleep(1)
-        let file = tapFirst(["uitest-card"], prefix: true)
-        log("导入角色卡：文件 \(file ?? "未找到")")
+        let cardFolder = tapFirst(["角色卡"], prefix: true)
+        log("选择器导入：角色卡文件夹 \(cardFolder ?? "未找到")")
+        sleep(1)
+        let file = tapFirst(["uitest-picker"], prefix: true)
+        log("选择器导入：文件 \(file ?? "未找到")")
         if file == nil {
             let visible = app.cells.allElementsBoundByIndex.prefix(40).map(\.label).joined(separator: " | ")
-            log("导入角色卡：当前可见文字 \(visible)")
-            save("12-文档选择器-未找到文件", app)
-            return
+            log("选择器导入：当前可见单元格 \(visible)")
+            save("13-文档选择器-未找到文件", app)
         }
-        let imported = app.staticTexts["测试旅者"].waitForExistence(timeout: 15)
-        log("导入角色卡：侧栏出现「测试旅者」：\(imported)")
-        save("13-导入角色卡后", app)
-        XCTAssertTrue(imported, "通过文档选择器导入角色卡失败")
+        let imported = app.staticTexts["选择器旅者"].waitForExistence(timeout: 15)
+        log("选择器导入：侧栏出现「选择器旅者」：\(imported)")
+        save("13-选择器导入后", app)
+        XCTAssertTrue(imported, "通过系统文档选择器导入角色卡失败")
     }
+
+    // MARK: - 测试
 
     /// 独立于文件选择器的集成测试：输入真实 V2 JSON，确认出现新角色。
     func testPasteJSONCharacterCard() throws {
@@ -125,6 +187,12 @@ final class MoonlitTavernUITests: XCTestCase {
         let name = app.staticTexts["ClipboardCardSmoke"]
         XCTAssertTrue(name.waitForExistence(timeout: 15), "导入后侧栏没有显示 ClipboardCardSmoke")
         save("clipboard-json-card-imported", app)
+
+        // 重新启动后角色还在
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(app.staticTexts["ClipboardCardSmoke"].waitForExistence(timeout: 15), "重启后粘贴导入的角色不见了")
+        log("粘贴导入：重启后角色仍在")
     }
 
     func testLocalRoleplayEndToEnd() throws {
@@ -163,38 +231,45 @@ final class MoonlitTavernUITests: XCTestCase {
         let done = element(app, "settingsDone")
         if done.waitForExistence(timeout: 5) { done.tap() }
 
-        // 3. 发送消息，等待本地模型回复
+        // 3. 自由输入并发送，等待本地模型回复
         XCTAssertTrue(composer.waitForExistence(timeout: 10))
         composer.tap()
         composer.typeText("你好，艾琳。今晚还有空房吗？")
         save("03-输入消息", app)
         let send = element(app, "sendButton")
         send.tap()
-        let start = Date()
-        // 生成期间出现停止按钮
-        let stop = element(app, "stopButton")
-        let sawStop = stop.waitForExistence(timeout: 30)
-        log("生成开始（出现停止按钮）：\(sawStop)")
         sleep(3)
         save("04-生成中", app)
-        // 等待生成结束：停止按钮消失、回复出现
-        let deadline = Date().addingTimeInterval(Double(env["MOONLIT_GEN_TIMEOUT"] ?? "600") ?? 600)
-        while Date() < deadline {
-            if !stop.exists && count(app, "message-assistant") > greetings { break }
-            sleep(2)
-        }
-        let elapsed = Date().timeIntervalSince(start)
-        let replies = count(app, "message-assistant")
+        let (elapsed, replies) = waitForReply(app, after: greetings)
         let userMessages = count(app, "message-user")
         log(String(format: "生成结束，用时 %.1f 秒，助手消息数 %d", elapsed, replies))
         XCTAssertGreaterThan(replies, greetings, "没有收到本地模型的回复")
-        let lastReply = app.descendants(matching: .any).matching(identifier: "message-assistant").element(boundBy: replies - 1)
-        let replyText = lastReply.label
+        let replyText = messages(app, "assistant").element(boundBy: replies - 1).label
         log("回复内容：\(replyText)")
         XCTAssertFalse(replyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, "回复为空")
         save("05-收到回复", app)
 
-        // 4. 右侧面板
+        // 4. 剧情选项：回复后自动出现
+        let options1 = waitForSuggestions(app)
+        log("剧情选项：\(options1.map { "「\($0)」" }.joined(separator: " "))")
+        XCTAssertGreaterThanOrEqual(options1.count, 2, "回复后没有出现剧情选项")
+        save("05b-剧情选项", app)
+
+        // 5. 换一组：选项更新，角色回复不变
+        let refresh = element(app, "refreshSuggestions")
+        XCTAssertTrue(refresh.waitForExistence(timeout: 10), "没有「换一组选项」按钮")
+        refresh.tap()
+        let sawWorking = element(app, "suggestionsWorking").waitForExistence(timeout: 10)
+        let options2 = waitForSuggestions(app)
+        let replyAfterRefresh = messages(app, "assistant").element(boundBy: replies - 1).label
+        log("换一组：出现生成提示 \(sawWorking)，新选项 \(options2.map { "「\($0)」" }.joined(separator: " "))，与上一组不同：\(options2 != options1)，回复未变：\(replyAfterRefresh == replyText)")
+        XCTAssertTrue(sawWorking, "点「换一组」后没有开始生成")
+        XCTAssertGreaterThanOrEqual(options2.count, 2, "换一组后没有选项")
+        XCTAssertEqual(count(app, "message-assistant"), replies, "换一组不应新增或删除回复")
+        XCTAssertEqual(replyAfterRefresh, replyText, "换一组改动了角色回复")
+        save("05c-换一组", app)
+
+        // 6. 右侧面板
         let tabs = element(app, "inspectorTabs")
         if tabs.waitForExistence(timeout: 5) {
             for tab in ["上下文", "世界书", "记忆", "参数", "角色"] {
@@ -209,7 +284,7 @@ final class MoonlitTavernUITests: XCTestCase {
             log("右侧面板未显示")
         }
 
-        // 5. 角色编辑
+        // 7. 角色编辑
         let edit = element(app, "editCharacterButton")
         if edit.waitForExistence(timeout: 5) {
             edit.tap()
@@ -219,7 +294,7 @@ final class MoonlitTavernUITests: XCTestCase {
             if cancel.waitForExistence(timeout: 5) { cancel.tap() }
         }
 
-        // 6. 群聊存档
+        // 8. 群聊存档
         let group = element(app, "chat-row-group")
         if group.waitForExistence(timeout: 5) {
             group.tap()
@@ -227,49 +302,75 @@ final class MoonlitTavernUITests: XCTestCase {
             save("08-群聊存档", app)
         }
 
-        // 7. 竖屏布局
+        // 9. 竖屏布局
         XCUIDevice.shared.orientation = .portrait
         sleep(2)
         save("09-竖屏", app)
         XCUIDevice.shared.orientation = .landscapeLeft
         sleep(1)
 
-        // 8. 退出并重新启动：聊天记录保留，模型重新加载后可以接着聊
+        // 10. 退出并重新启动：聊天记录和剧情选项都保留
         app.terminate()
         app.launch()
         XCTAssertTrue(composer.waitForExistence(timeout: 30), "重启后聊天输入框没有出现")
         let restoredUser = count(app, "message-user")
         let restoredReplies = count(app, "message-assistant")
-        let restoredLast = restoredReplies > 0
-            ? app.descendants(matching: .any).matching(identifier: "message-assistant").element(boundBy: restoredReplies - 1).label
-            : ""
-        log("重启后：用户消息 \(restoredUser)/\(userMessages)，助手消息 \(restoredReplies)/\(replies)，最后一条回复与重启前一致：\(restoredLast == replyText)")
+        let restoredLast = restoredReplies > 0 ? messages(app, "assistant").element(boundBy: restoredReplies - 1).label : ""
+        let restoredOptions = waitForSuggestions(app, timeout: 10)
+        log("重启后：用户消息 \(restoredUser)/\(userMessages)，助手消息 \(restoredReplies)/\(replies)，最后一条回复与重启前一致：\(restoredLast == replyText)，选项与重启前一致：\(restoredOptions == options2)")
         XCTAssertEqual(restoredUser, userMessages, "重启后用户消息数量不一致")
         XCTAssertEqual(restoredReplies, replies, "重启后助手消息数量不一致")
         XCTAssertEqual(restoredLast, replyText, "重启后最后一条回复内容不一致")
+        XCTAssertEqual(restoredOptions, options2, "重启后剧情选项不一致")
         save("10-重启后", app)
 
-        composer.tap()
-        composer.typeText("那就要朝钟楼的那间。")
-        send.tap()
-        let start2 = Date()
-        _ = stop.waitForExistence(timeout: 30)
-        let deadline2 = Date().addingTimeInterval(Double(env["MOONLIT_GEN_TIMEOUT"] ?? "600") ?? 600)
-        while Date() < deadline2 {
-            if !stop.exists && count(app, "message-assistant") > restoredReplies { break }
-            sleep(2)
-        }
-        let replies2 = count(app, "message-assistant")
-        log(String(format: "重启后继续对话：用时 %.1f 秒，助手消息数 %d", Date().timeIntervalSince(start2), replies2))
-        XCTAssertGreaterThan(replies2, restoredReplies, "重启后没有收到回复")
+        // 11. 点一个选项：作为用户消息发出，模型接着回复，新回复下面又有选项
+        let pick = element(app, "suggestion-0")
+        XCTAssertTrue(pick.waitForExistence(timeout: 10), "重启后找不到选项")
+        let picked = pick.label
+        pick.tap()
+        let (elapsed2, replies2) = waitForReply(app, after: restoredReplies)
+        let users2 = count(app, "message-user")
+        let lastUser = users2 > 0 ? messages(app, "user").element(boundBy: users2 - 1).label : ""
+        log(String(format: "点选项「%@」后：用时 %.1f 秒，用户消息 %d，助手消息 %d", picked, elapsed2, users2, replies2))
+        XCTAssertEqual(users2, restoredUser + 1, "点选项后没有发出用户消息")
+        XCTAssertTrue(lastUser.contains(String(picked.prefix(6))), "发出的用户消息与所选选项不一致：\(lastUser)")
+        XCTAssertGreaterThan(replies2, restoredReplies, "点选项后没有收到回复")
         if replies2 > restoredReplies {
-            let reply2 = app.descendants(matching: .any).matching(identifier: "message-assistant").element(boundBy: replies2 - 1)
-            log("重启后回复内容：\(reply2.label)")
+            log("选项之后的回复：\(messages(app, "assistant").element(boundBy: replies2 - 1).label)")
         }
-        save("11-重启后继续对话", app)
+        let options3 = waitForSuggestions(app)
+        log("新回复的剧情选项：\(options3.map { "「\($0)」" }.joined(separator: " "))")
+        XCTAssertGreaterThanOrEqual(options3.count, 2, "新回复下没有剧情选项")
+        save("11-点选项后继续", app)
 
-        // 9. 通过系统文档选择器导入角色卡（App 启动时在「我的 iPad › 月下酒馆」放了 uitest-card.json）
+        // 12. 重新生成：保留旧版本，可以左右切换
+        let regenerate = element(app, "regenerateButton")
+        XCTAssertTrue(regenerate.waitForExistence(timeout: 10), "没有「重新生成」按钮")
+        regenerate.tap()
+        let stop = element(app, "stopButton")
+        _ = stop.waitForExistence(timeout: 30)
+        let deadline = Date().addingTimeInterval(genTimeout)
+        while Date() < deadline && stop.exists { sleep(2) }
+        let switcher = app.staticTexts["2/2"].waitForExistence(timeout: 15)
+        log("重新生成：出现版本切换「2/2」：\(switcher)，助手消息 \(count(app, "message-assistant"))")
+        XCTAssertTrue(switcher, "重新生成后没有保留旧版本")
+        XCTAssertEqual(count(app, "message-assistant"), replies2, "重新生成应替换显示的版本，而不是追加一条")
+        save("11b-重新生成", app)
+
+        // 13. 导入角色卡：App 文件夹、系统文档选择器
+        importCardFromFolder(app)
         importCardThroughPicker(app)
+
+        // 14. 再次重启：导入的角色仍在
+        app.terminate()
+        app.launch()
+        XCTAssertTrue(composer.waitForExistence(timeout: 30), "第二次重启后聊天输入框没有出现")
+        let keptFolder = app.staticTexts["测试旅者"].waitForExistence(timeout: 15)
+        let keptPicker = app.staticTexts["选择器旅者"].waitForExistence(timeout: 5)
+        log("第二次重启后：「测试旅者」\(keptFolder)，「选择器旅者」\(keptPicker)")
+        XCTAssertTrue(keptFolder && keptPicker, "重启后导入的角色不见了")
+        save("14-重启后导入的角色", app)
         log("测试流程结束")
     }
 }

@@ -76,7 +76,12 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
     private var needsCheckpoints = false
     /// 提示词末尾前一个位置的「部分状态」检查点（只含循环层状态，几十 MB）。
     /// 重新生成、停止后重来时，从这里恢复，不用整段重算。
-    private var checkpoint: (tokens: [llama_token], data: [UInt8])?
+    /// 混合 / 循环架构的状态检查点（只含循环层状态），新的在后。
+    /// 留几个不同位置的：回复读完提示词时、回复生成完时、剧情选项读完提示词时，
+    /// 下一轮回复从其中最长、且仍是新提示词前缀的那个接着算。
+    private var checkpoints: [(tokens: [llama_token], data: [UInt8])] = []
+    private static let maxCheckpoints = 3
+    private var loggedCheckpointSize = false
 
     private var _info: LoadedModelInfo?
     private var currentToken: CancelToken?
@@ -193,7 +198,7 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
         vocab = loadedVocab
         lifetimeLock.unlock()
         cachedTokens = []
-        checkpoint = nil
+        checkpoints = []
         needsCheckpoints = llama_model_is_recurrent(loadedModel) || llama_model_is_hybrid(loadedModel)
 
         let template = llama_model_chat_template(loadedModel, nil).map { String(cString: $0) }
@@ -256,7 +261,7 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
         vocab = nil
         lifetimeLock.unlock()
         cachedTokens = []
-        checkpoint = nil
+        checkpoints = []
         chatTemplate = nil
         stateLock.lock()
         let hadModel = _info != nil
@@ -373,15 +378,23 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
 
     /// 保存「部分状态」检查点（只含循环层状态）。只在 queue 上调用。
     private func saveCheckpoint(ctx: OpaquePointer) {
+        guard !cachedTokens.isEmpty, !checkpoints.contains(where: { $0.tokens == cachedTokens }) else { return }
         let flags = llama_state_seq_flags(LLAMA_STATE_SEQ_FLAGS_PARTIAL_ONLY)
         let size = llama_state_seq_get_size_ext(ctx, 0, flags)
-        guard size > 0 else { checkpoint = nil; return }
+        guard size > 0 else { return }
         var data = [UInt8](repeating: 0, count: size)
         let written = llama_state_seq_get_data_ext(ctx, &data, size, 0, flags)
         if written == size {
-            checkpoint = (tokens: cachedTokens, data: data)
+            checkpoints.append((tokens: cachedTokens, data: data))
+            if checkpoints.count > Self.maxCheckpoints {
+                checkpoints.removeFirst(checkpoints.count - Self.maxCheckpoints)
+            }
+            if !loggedCheckpointSize {
+                loggedCheckpointSize = true
+                EngineLog.shared.append(String(format: "状态检查点每个约 %.1f MB，最多保留 %d 个",
+                                               Double(size) / 1_048_576, Self.maxCheckpoints))
+            }
         } else {
-            checkpoint = nil
             EngineLog.shared.append("检查点保存失败（\(written)/\(size) 字节）")
         }
     }
@@ -427,15 +440,16 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
         if common < cachedTokens.count {
             if llama_memory_seq_rm(memory, 0, Int32(common), -1) {
                 // 标准 Transformer：直接截断
-            } else if let ckpt = checkpoint, ckpt.tokens.count <= common,
-                      promptTokens.starts(with: ckpt.tokens),
+            } else if let ckpt = checkpoints
+                        .filter({ $0.tokens.count <= common && promptTokens.starts(with: $0.tokens) })
+                        .max(by: { $0.tokens.count < $1.tokens.count }),
                       restoreCheckpoint(ckpt, ctx: ctx),
                       llama_memory_seq_rm(memory, 0, Int32(ckpt.tokens.count), -1) {
                 // 混合架构：恢复循环层检查点，再截断注意力层的 KV
                 common = ckpt.tokens.count
             } else {
                 llama_memory_clear(memory, true)
-                checkpoint = nil
+                checkpoints = []
                 common = 0
             }
         }
@@ -471,7 +485,7 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
                     if rcPrefix != 0 {
                         llama_memory_clear(memory, true)
                         cachedTokens = []
-                        checkpoint = nil
+                        checkpoints = []
                         throw InferenceError.decodeFailed(rcPrefix)
                     }
                     cachedTokens.append(contentsOf: chunk.dropLast())
@@ -484,7 +498,7 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
                     batch.n_seq_id[i] = 1
                     batch.seq_id[i]![0] = 0
                     batch.n_tokens = 1
-                } else if needsCheckpoints, checkpoint?.tokens != cachedTokens {
+                } else if needsCheckpoints {
                     saveCheckpoint(ctx: ctx)
                 }
                 batch.logits[Int(batch.n_tokens) - 1] = 1
@@ -495,7 +509,7 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
             if rc != 0 {
                 llama_memory_clear(memory, true)
                 cachedTokens = []
-                checkpoint = nil
+                checkpoints = []
                 throw InferenceError.decodeFailed(rc)
             }
             processed += chunkCount
@@ -535,7 +549,10 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
         // ---- 逐 token 生成 ----
         emit(.progress(.generating, nil))
         var utf8 = UTF8Accumulator()
-        var filter = StreamingTextFilter(stopSequences: request.stopSequences + rendered.stopSequences, hideThinking: true)
+        // 模板已经替模型打开了 <think>（开启思考模式时）：输出从思考段里开始
+        let opensThinking = rendered.text.hasSuffix("<think>\n") || rendered.text.hasSuffix("<think>")
+        var filter = StreamingTextFilter(stopSequences: request.stopSequences + rendered.stopSequences,
+                                         hideThinking: true, startsInsideThinking: opensThinking)
         var generated = 0
         var firstTokenTime: Date?
         var stopReason = "长度上限"
@@ -572,6 +589,18 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
         if !filter.stopped {
             let rest = filter.feed(utf8.flush()) + filter.finish()
             if !rest.isEmpty { emit(.text(rest)) }
+        }
+        // 回复生成完也存一个检查点：之后插进来的剧情选项不会让下一轮回复整段重算
+        if needsCheckpoints, request.purpose == .reply, generated > 0 {
+            saveCheckpoint(ctx: ctx)
+        }
+        if filter.unclosedThinking {
+            EngineLog.shared.append("思考段直到结束都没闭合，已把其中 \(filter.visibleText.count) 字当正文显示（停止原因：\(stopReason)）")
+        } else if filter.hiddenThinkingCount > 0 {
+            EngineLog.shared.append("隐藏了 \(filter.hiddenThinkingCount) 字思考内容")
+        }
+        if let stop = filter.matchedStop {
+            EngineLog.shared.append("命中停止词「\(stop.replacingOccurrences(of: "\n", with: "\\n"))」，原始输出 \(filter.rawCount) 字，显示 \(filter.visibleText.count) 字")
         }
         let end = Date()
         let firstToken = firstTokenTime ?? end

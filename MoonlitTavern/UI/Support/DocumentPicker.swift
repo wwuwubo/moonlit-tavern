@@ -20,10 +20,9 @@ final class DocumentPicker: NSObject, UIDocumentPickerDelegate {
         self.onCancel = onCancel
     }
 
-    /// 选择一个文件。
-    /// - asCopy 为 true：系统先把文件拷贝到本 App 的临时目录再交回，读取不受 iCloud 下载状态和访问授权影响，适合小文件；
-    ///   模型这类几 GB 的文件用 false，直接拿原文件地址，由调用方自己复制并显示进度。
-    static func open(_ types: [UTType], asCopy: Bool = true, onPick: @escaping (URL) -> Void) {
+    /// 选择一个文件。默认原地打开（asCopy 为 false）：拿到原文件地址和临时访问授权，由调用方读取。
+    /// 拷贝模式需要系统把文件写进本 App 的容器；真机上出现过选择器整页空白的情况，怀疑与此有关，所以默认不用。
+    static func open(_ types: [UTType], asCopy: Bool = false, onPick: @escaping (URL) -> Void) {
         let picker = UIDocumentPickerViewController(forOpeningContentTypes: types, asCopy: asCopy)
         picker.allowsMultipleSelection = false
         picker.shouldShowFileExtensions = true
@@ -66,6 +65,7 @@ final class DocumentPicker: NSObject, UIDocumentPickerDelegate {
                 active = nil
                 return
             }
+            EngineLog.shared.append("文档选择器：弹出（\(type(of: top))）")
             top.present(picker, animated: true)
         }
     }
@@ -84,11 +84,13 @@ final class DocumentPicker: NSObject, UIDocumentPickerDelegate {
 
     func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
         Self.active = nil
+        EngineLog.shared.append("文档选择器：选中 \(urls.map(\.lastPathComponent).joined(separator: "、"))")
         onPick(urls)
     }
 
     func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
         Self.active = nil
+        EngineLog.shared.append("文档选择器：已取消")
         onCancel()
     }
 }
@@ -97,7 +99,7 @@ extension View {
     /// 与 fileImporter 用法相同：绑定值变为 true 时弹出系统文档选择器。
     func documentImporter(isPresented: Binding<Bool>,
                           types: [UTType],
-                          asCopy: Bool = true,
+                          asCopy: Bool = false,
                           onPick: @escaping (URL) -> Void) -> some View {
         onChange(of: isPresented.wrappedValue) { _, show in
             guard show else { return }

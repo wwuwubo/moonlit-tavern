@@ -217,6 +217,32 @@ if let s = stats3 {
                                        : "重算 \(s.promptTokensEvaluated)/\(s.promptTokens) tok（混合架构无法部分回退时会整段重算）")
 }
 
+// ---------- 剧情选项：沿用回复的上下文，之后的下一轮也不整段重算 ----------
+var chatS = chat
+chatS.append(ChatMessage(role: .assistant, speakerID: erin.id, speakerName: erin.name,
+                         content: ResponseSanitizer.clean(reply3, speakerName: erin.name)))
+let planS = plan(for: chatS, characters: [erin], speaker: erin)
+let reqS = ReplySuggestions.request(plan: planS, userName: "旅人", characterNames: [erin.name], count: 3, sampling: sampling)
+let (outS, statsS, errS) = await generate("剧情选项", reqS)
+let options = ReplySuggestions.parse(outS, userName: "旅人", characterNames: [erin.name], limit: 3)
+log("整理出的选项：" + options.map { "「\($0)」" }.joined(separator: " "))
+check("剧情选项：生成并整理出至少 2 个", errS == nil && options.count >= 2, critical: false, "\(options.count) 个")
+cleanOutputChecks("剧情选项", outS)
+if let s = statsS {
+    check("剧情选项：复用回复的上下文缓存", s.promptTokensEvaluated < s.promptTokens / 2, critical: false,
+          "复用 \(s.promptTokens - s.promptTokensEvaluated)/\(s.promptTokens) tok，计算 \(s.promptTokensEvaluated) tok")
+}
+var chatN = chatS
+chatN.append(ChatMessage(role: .user, speakerName: "旅人", content: options.first ?? "那就要那间房。"))
+let planN = plan(for: chatN, characters: [erin], speaker: erin)
+let reqN = GenerationRequest(messages: planN.messages, prefill: planN.prefill, sampling: sampling, maxNewTokens: 120, stopSequences: planN.stopSequences)
+let (replyN, statsN, errN) = await generate("选了选项之后的下一轮", reqN)
+check("选项之后的下一轮：生成成功", errN == nil && !replyN.isBlank, "生成 \(statsN?.generatedTokens ?? 0) tok")
+if let s = statsN {
+    check("选项之后的下一轮：不整段重算", s.promptTokensEvaluated < s.promptTokens / 2, critical: false,
+          "复用 \(s.promptTokens - s.promptTokensEvaluated)/\(s.promptTokens) tok，计算 \(s.promptTokensEvaluated) tok")
+}
+
 // ---------- 停止生成 ----------
 let reqStop = GenerationRequest(messages: plan2.messages, prefill: plan2.prefill, sampling: sampling, maxNewTokens: 300, stopSequences: plan2.stopSequences)
 let (_, statsStop, errStop) = await generate("停止生成（收到 6 段后取消）", reqStop, cancelAfter: 6)

@@ -451,6 +451,13 @@ private struct ParamsPanel: View {
                 Button("恢复默认") { state.settings.sampling = SamplingParams() }
                     .font(.caption)
             }
+            SectionCard(title: "剧情选项", subtitle: "角色回复后，替你想几个下一步的选择") {
+                Toggle("回复后自动给出选项", isOn: $state.settings.suggestions.enabled)
+                Stepper("每次 \(state.settings.suggestions.count) 个", value: $state.settings.suggestions.count, in: 2...4)
+                Text("关掉自动生成后，仍可在回复下方点「给我几个选项」。本地模型每次多花几秒，云端模式会多一次请求。")
+                    .font(.caption)
+                    .foregroundStyle(Theme.textTertiary)
+            }
             SectionCard(title: "提示词") {
                 Toggle("放入示例对话（有剩余空间时）", isOn: $state.settings.includeExampleDialogue)
                 Stepper("世界书预算 \(state.settings.loreTokenBudget) token", value: $state.settings.loreTokenBudget, in: 100...4000, step: 100)

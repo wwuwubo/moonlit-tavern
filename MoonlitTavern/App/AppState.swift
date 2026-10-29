@@ -70,6 +70,9 @@ final class AppState: ObservableObject {
     @Published var thermalLabel = DeviceMetrics.thermalLabel
 
     var generationTask: Task<Void, Never>?
+    /// 正在生成剧情选项的那条回复
+    @Published var suggestionJob: SuggestionJob?
+    var suggestionTask: Task<Void, Never>?
     /// 因内存不足自动降低上下文时，记录用户原本设置的值。
     var reducedContextRequest: Int?
     private var settingsSaveTask: Task<Void, Never>?
@@ -115,7 +118,8 @@ final class AppState: ObservableObject {
         lorebooks = store.loadLorebooks()
         benchmarks = BenchmarkResult.load(from: store.root)
         if firstLaunch { installSampleData() }
-        if isUITest { Self.writeUITestCard() }
+        Self.ensureCardFolder()
+        if isUITest { Self.writeUITestCards() }
         if !store.loadIssues.isEmpty {
             banner = Banner(kind: .warning, text: "有 \(store.loadIssues.count) 个数据文件无法读取，已跳过。")
         }
@@ -144,6 +148,7 @@ final class AppState: ObservableObject {
 
     func handleMemoryWarning() {
         EngineLog.shared.append("收到系统内存警告，进程内存 \(Int(DeviceMetrics.footprintMB() ?? -1)) MB")
+        cancelSuggestions()
         if generation != nil {
             stopGeneration()
             show(.warning, "系统内存紧张，已停止本次生成。")
@@ -208,24 +213,26 @@ final class AppState: ObservableObject {
 
     // MARK: - 示例数据
 
-    /// UI 自动化测试：在「文件 › 我的 iPad › 月下酒馆」里放一张测试角色卡，供测试通过系统文档选择器导入。
-    private static func writeUITestCard() {
-        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let card: [String: Any] = [
-            "spec": "chara_card_v2",
-            "spec_version": "2.0",
-            "data": [
-                "name": "测试旅者",
-                "description": "用于自动化测试的角色。",
-                "personality": "安静",
-                "scenario": "",
-                "first_mes": "你好。",
-                "mes_example": "",
-                "tags": ["测试"],
-            ] as [String: Any],
-        ]
-        if let data = try? JSONSerialization.data(withJSONObject: card, options: [.prettyPrinted]) {
-            try? data.write(to: docs.appendingPathComponent("uitest-card.json"), options: .atomic)
+    /// UI 自动化测试：在「角色卡」文件夹里放两张测试卡，一张从 App 内的文件夹列表导入，一张走系统文件选择器。
+    private static func writeUITestCards() {
+        ensureCardFolder()
+        for (file, name) in [("uitest-card.json", "测试旅者"), ("uitest-picker.json", "选择器旅者")] {
+            let card: [String: Any] = [
+                "spec": "chara_card_v2",
+                "spec_version": "2.0",
+                "data": [
+                    "name": name,
+                    "description": "用于自动化测试的角色。",
+                    "personality": "安静",
+                    "scenario": "",
+                    "first_mes": "你好。",
+                    "mes_example": "",
+                    "tags": ["测试"],
+                ] as [String: Any],
+            ]
+            if let data = try? JSONSerialization.data(withJSONObject: card, options: [.prettyPrinted]) {
+                try? data.write(to: cardFolderURL.appendingPathComponent(file), options: .atomic)
+            }
         }
     }
 
@@ -359,6 +366,31 @@ final class AppState: ObservableObject {
         return importCharacterCard(data: data, fileName: fileName)
     }
 
+    /// 「文件 › 我的 iPad › 月下酒馆 › 角色卡」文件夹。放进去的 PNG / JSON 可以在 App 里直接导入，不经过系统文件选择器。
+    nonisolated static var cardFolderURL: URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("角色卡", isDirectory: true)
+    }
+
+    nonisolated static func ensureCardFolder() {
+        try? FileManager.default.createDirectory(at: cardFolderURL, withIntermediateDirectories: true)
+    }
+
+    /// 角色卡文件夹里的 PNG / JSON 文件，新的在前。
+    func cardFolderFiles() -> [URL] {
+        Self.ensureCardFolder()
+        let keys: [URLResourceKey] = [.contentModificationDateKey, .isRegularFileKey]
+        let urls = (try? FileManager.default.contentsOfDirectory(at: Self.cardFolderURL, includingPropertiesForKeys: keys,
+                                                                 options: [.skipsHiddenFiles])) ?? []
+        return urls
+            .filter { ["png", "json"].contains($0.pathExtension.lowercased()) }
+            .sorted {
+                let a = (try? $0.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+                let b = (try? $1.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+                return a > b
+            }
+    }
+
     /// 将用户明确复制到剪贴板的 JSON 导入角色卡，绕开系统文件选择器。
     @discardableResult
     func importCharacterCard(jsonText: String) -> TavernCharacter? {
@@ -371,7 +403,7 @@ final class AppState: ObservableObject {
     }
 
     @discardableResult
-    private func importCharacterCard(data: Data, fileName: String) -> TavernCharacter? {
+    func importCharacterCard(data: Data, fileName: String) -> TavernCharacter? {
         EngineLog.shared.append("导入角色卡：\(fileName)，\(data.count) 字节")
         do {
             let result = try CharacterCardCodec.importCard(from: data)

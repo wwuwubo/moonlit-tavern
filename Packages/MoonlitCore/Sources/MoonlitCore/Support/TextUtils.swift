@@ -95,16 +95,14 @@ public extension String {
     /// 去掉成对出现的 <think>...</think> 段落，以及没有闭合的尾部思考段。
     func strippingThinkBlocks() -> String {
         var text = self
-        while let start = text.range(of: "<think>") {
-            if let end = text.range(of: "</think>", range: start.upperBound..<text.endIndex) {
-                text.removeSubrange(start.lowerBound..<end.upperBound)
-            } else {
-                text.removeSubrange(start.lowerBound..<text.endIndex)
-            }
+        // 开头完整的思考段整段去掉
+        let leading = text.drop(while: { $0.isWhitespace })
+        if leading.hasPrefix("<think>"), let end = text.range(of: "</think>") {
+            text = String(text[end.upperBound...])
         }
-        // 只出现闭合标签的情况（模板里已预填 <think>）
-        if let end = text.range(of: "</think>") {
-            text.removeSubrange(text.startIndex..<end.upperBound)
+        // 其他位置的思考标签只去掉标签本身，内容保留：宁可多显示，也不能把正文删掉
+        if text.contains("think>") {
+            text = text.replacingOccurrences(of: "<think>", with: "").replacingOccurrences(of: "</think>", with: "")
         }
         return text
     }

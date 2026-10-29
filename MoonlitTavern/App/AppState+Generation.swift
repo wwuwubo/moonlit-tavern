@@ -16,6 +16,8 @@ extension AppState {
 
     func sendUserMessage(_ text: String, in chatID: UUID) {
         let trimmed = text.trimmed
+        // 用户已经开口：还没生成完的剧情选项不要了
+        cancelSuggestions()
         guard !trimmed.isEmpty, generation == nil, var chat = chat(chatID) else { return }
         let persona = persona(for: chat)
         chat.append(ChatMessage(role: .user, speakerName: persona.name, content: trimmed))
@@ -55,11 +57,13 @@ extension AppState {
     func stopGeneration() {
         llama.cancel()
         generationTask?.cancel()
+        cancelSuggestions()
     }
 
     // MARK: - 回复生成
 
     private func startReply(chatID: UUID, speakerID: UUID?, regenerating messageID: UUID?) {
+        cancelSuggestions()
         guard generation == nil, let chat = chat(chatID) else { return }
         let speaker: TavernCharacter
         if let speakerID, let c = character(speakerID) {
@@ -75,11 +79,18 @@ extension AppState {
             purpose: .reply, phase: .processingPrompt, progress: nil, regeneratingMessageID: messageID
         )
         generationTask = Task { [weak self] in
-            await self?.runReply(chatID: chatID, speaker: speaker, regenerating: messageID)
+            guard let self else { return }
+            let saved = await self.runReply(chatID: chatID, speaker: speaker, regenerating: messageID)
+            // 回复完整保存后，接着替用户想几个下一步的选项（不占用生成状态，用户随时可以直接输入）
+            if let saved, self.settings.suggestions.enabled {
+                self.requestSuggestions(chatID: chatID, messageID: saved)
+            }
         }
     }
 
-    private func runReply(chatID: UUID, speaker: TavernCharacter, regenerating messageID: UUID?) async {
+    /// 生成一条回复。返回成功保存（且没有被中断）的回复 id，用于接着生成剧情选项。
+    @discardableResult
+    private func runReply(chatID: UUID, speaker: TavernCharacter, regenerating messageID: UUID?) async -> UUID? {
         defer {
             generation = nil
             generationTask = nil
@@ -89,7 +100,7 @@ extension AppState {
                 generation?.phase = .loadingModel
                 try await ensureModelLoaded()
             }
-            guard var promptChat = chat(chatID) else { return }
+            guard var promptChat = chat(chatID) else { return nil }
             if let messageID, let original = promptChat.message(messageID) {
                 promptChat.activeLeafID = original.parentID
             }
@@ -109,6 +120,7 @@ extension AppState {
             )
             var finalStats: GenerationStats?
             var cancelled = false
+            var streamError: Error?
             do {
                 for try await event in engine.generate(request) {
                     switch event {
@@ -125,21 +137,33 @@ extension AppState {
                 cancelled = true
             } catch is CancellationError {
                 cancelled = true
+            } catch {
+                // 生成中途出错：已经显示出来的部分照样保存，不能跟着错误一起丢掉
+                streamError = error
             }
             if Task.isCancelled || finalStats?.stopReason == "用户停止" { cancelled = true }
 
-            let raw = generation?.text ?? ""
-            let content = ResponseSanitizer.clean(raw, speakerName: speaker.name)
-            guard !content.isEmpty else {
-                if !cancelled { show(.warning, "模型没有输出内容。可以重新生成，或检查提示词模板设置。") }
-                return
+            let visible = generation?.text ?? ""
+            let outcome = ReplyFinalizer.finalize(visible: visible, speakerName: speaker.name)
+            let stopReason = streamError.map { "出错" + ($0.localizedDescription.isEmpty ? "" : "：\($0.localizedDescription)") }
+                ?? (cancelled ? "用户停止" : (finalStats?.stopReason ?? "未知"))
+            EngineLog.shared.append(outcome.logLine(stopReason: stopReason, saved: !outcome.content.isEmpty,
+                                                    error: streamError?.localizedDescription))
+            guard !outcome.content.isEmpty else {
+                if let streamError { throw streamError }
+                if !cancelled {
+                    let reason = finalStats?.stopReason ?? "未知"
+                    show(.warning, "模型这次没有写出正文（停止原因：\(reason)）。可以点重新生成；反复出现时请到「设置 › 诊断日志」查看记录。")
+                }
+                return nil
             }
-            var stats = finalStats
-            if cancelled, stats == nil {
-                stats = GenerationStats(engine: engine.engineName, modelName: "", stopReason: "用户停止")
+            var stats = finalStats ?? GenerationStats(engine: engine.engineName, modelName: "", stopReason: stopReason)
+            if cancelled || streamError != nil { stats.stopReason = stopReason }
+            if let streamError {
+                show(.warning, "生成中途出错（\(streamError.localizedDescription)），已保存已经生成的部分。")
             }
-            let reply = ChatMessage(role: .assistant, speakerID: speaker.id, speakerName: speaker.name, content: content, stats: stats)
-            guard var chat = chat(chatID) else { return }
+            let reply = ChatMessage(role: .assistant, speakerID: speaker.id, speakerName: speaker.name, content: outcome.content, stats: stats)
+            guard var chat = chat(chatID) else { return nil }
             if let messageID {
                 chat.addSibling(reply, siblingOf: messageID)
             } else {
@@ -148,14 +172,17 @@ extension AppState {
             chat.historyAnchor = plan.historyAnchor
             chat.loreState = plan.lore.nextState
             saveChat(chat)
-            if let stats { lastStats = stats }
+            lastStats = stats
 
-            if !cancelled, settings.memory.autoSummarize, plan.truncatedMessages.count >= settings.memory.summarizeBatch {
+            if !cancelled, streamError == nil, settings.memory.autoSummarize,
+               plan.truncatedMessages.count >= settings.memory.summarizeBatch {
                 await summarize(chatID: chatID, messages: plan.truncatedMessages)
             }
+            return (cancelled || streamError != nil) ? nil : reply.id
         } catch {
             show(.error, error.localizedDescription)
             EngineLog.shared.append("生成失败：\(error.localizedDescription)")
+            return nil
         }
     }
 
@@ -210,6 +237,7 @@ extension AppState {
 
     /// 立即整理：把除最近 6 条外、尚未摘要的消息做一次摘要。
     func summarizeNow(chatID: UUID) async {
+        cancelSuggestions()
         guard generation == nil, let chat = chat(chatID) else { return }
         let memory = memory(for: chatID)
         let path = chat.activePath().filter { !$0.isHidden }

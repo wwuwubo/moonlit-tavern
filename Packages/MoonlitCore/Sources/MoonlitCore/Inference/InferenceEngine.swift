@@ -24,12 +24,13 @@ public struct GenerationRequest: Sendable {
     public var maxNewTokens: Int
     /// 角色扮演层面的停止词。模板自身的结束标记由引擎补充。
     public var stopSequences: [String]
-    /// 用途标记：普通回复或摘要。摘要不显示在聊天里。
+    /// 用途标记：普通回复、摘要或剧情选项。后两者不作为角色发言显示。
     public var purpose: Purpose
 
     public enum Purpose: String, Sendable {
         case reply
         case summary
+        case suggestions
     }
 
     public init(

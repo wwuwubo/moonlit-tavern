@@ -85,7 +85,15 @@ public extension ChatSession {
         guard let idx = messages.firstIndex(where: { $0.id == id }) else { return }
         messages[idx].content = content
         messages[idx].editedAt = Date()
+        // 选项是照着原来的回复想的，改了回复就作废
+        messages[idx].suggestions = nil
         updatedAt = Date()
+    }
+
+    /// 写入（或清空）某条回复后的剧情选项。只改选项，不动回复正文和当前分支。
+    mutating func setSuggestions(_ options: [String]?, for id: UUID) {
+        guard let idx = messages.firstIndex(where: { $0.id == id }) else { return }
+        messages[idx].suggestions = options
     }
 
     mutating func setHidden(_ id: UUID, hidden: Bool) {

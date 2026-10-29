@@ -52,65 +52,81 @@ public struct UTF8Accumulator: Sendable {
 /// 流式输出过滤：
 /// - 遇到停止词立刻截断（停止词本身不显示）
 /// - 可能是停止词开头的部分先扣住，确认不是再放出
-/// - 隐藏 <think>…</think> 思考段
+/// - 隐藏开头的 <think>…</think> 思考段
+///
+/// 防止「吞回复」的几条规则：
+/// - 只有出现在输出最开头的 <think> 才算思考段；正文中间冒出来的思考标签只删标签，内容照常显示
+/// - 思考段到生成结束都没闭合（模型把正文写进了思考段，或用完了长度上限）：把这部分当正文放出来
+/// - 孤立的 </think> 只删标签，不删它前面的正文
 public struct StreamingTextFilter: Sendable {
     public private(set) var visibleText = ""
     public private(set) var stopped = false
     public private(set) var matchedStop: String?
+    /// 被当作思考段隐藏的字符数（诊断用）
+    public private(set) var hiddenThinkingCount = 0
+    /// 思考段直到结束都没闭合，内容已作为正文放出
+    public private(set) var unclosedThinking = false
+
+    private enum ThinkState: Sendable { case undecided, inThink, done }
 
     private let stops: [String]
     private let hideThinking: Bool
     private var held = ""
-    private var inThink = false
+    private var thinkState: ThinkState
+    private var thinkBuffer = ""
     private var raw = ""
 
-    public init(stopSequences: [String], hideThinking: Bool = true) {
+    /// - startsInsideThinking: 提示词末尾已经打开了 <think>（模板替模型开了头），输出从思考段里开始。
+    public init(stopSequences: [String], hideThinking: Bool = true, startsInsideThinking: Bool = false) {
         self.stops = stopSequences.filter { !$0.isEmpty }
         self.hideThinking = hideThinking
+        if !hideThinking {
+            thinkState = .done
+        } else {
+            thinkState = startsInsideThinking ? .inThink : .undecided
+        }
     }
+
+    /// 原始输出的字符数（诊断用）
+    public var rawCount: Int { raw.count }
 
     /// 输入新文本，返回本次可以显示的增量。
     public mutating func feed(_ piece: String) -> String {
         guard !stopped, !piece.isEmpty else { return "" }
         raw += piece
-        var buffer = held + piece
-        held = ""
         var output = ""
-
-        while !buffer.isEmpty {
-            if hideThinking && inThink {
-                if let end = buffer.range(of: "</think>") {
-                    buffer = String(buffer[end.upperBound...])
-                    inThink = false
-                    continue
+        var incoming = piece
+        while !incoming.isEmpty && !stopped {
+            switch thinkState {
+            case .undecided:
+                let pending = held + incoming
+                held = ""
+                incoming = ""
+                let trimmed = pending.drop(while: { $0.isWhitespace })
+                if trimmed.hasPrefix("<think>") {
+                    thinkState = .inThink
+                    incoming = String(trimmed.dropFirst("<think>".count))
+                } else if trimmed.isEmpty || "<think>".hasPrefix(trimmed) {
+                    held = pending // 还判断不了是不是思考段，先扣住
+                } else {
+                    thinkState = .done
+                    incoming = pending
                 }
-                // 保留可能的半个结束标签
-                held = Self.partialSuffix(of: buffer, matching: ["</think>"])
-                buffer = ""
-                break
+            case .inThink:
+                let pending = thinkBuffer + incoming
+                incoming = ""
+                if let end = pending.range(of: "</think>") {
+                    hiddenThinkingCount += pending.distance(from: pending.startIndex, to: end.lowerBound)
+                    thinkBuffer = ""
+                    thinkState = .done
+                    incoming = String(pending[end.upperBound...].drop(while: { $0.isWhitespace }))
+                } else {
+                    thinkBuffer = pending
+                }
+            case .done:
+                output += processVisible(held + incoming, final: false)
+                incoming = ""
             }
-            if hideThinking, let start = buffer.range(of: "<think>") {
-                let before = String(buffer[..<start.lowerBound])
-                let (emit, stop) = scanForStops(before)
-                output += emit
-                if stop { buffer = ""; break }
-                buffer = String(buffer[start.upperBound...])
-                inThink = true
-                continue
-            }
-            let (emit, stop) = scanForStops(buffer)
-            if stop {
-                output += emit
-                buffer = ""
-                break
-            }
-            // 扣住可能是停止词（或 <think>）开头的尾巴
-            var guards = stops
-            if hideThinking { guards.append("<think>") }
-            let tail = Self.partialSuffix(of: emit, matching: guards)
-            output += String(emit.dropLast(tail.count))
-            held = tail
-            buffer = ""
         }
         visibleText += output
         return output
@@ -118,11 +134,45 @@ public struct StreamingTextFilter: Sendable {
 
     /// 生成结束时放出被扣住的文本。
     public mutating func finish() -> String {
-        guard !stopped, !inThink else { held = ""; return "" }
-        let rest = held
+        guard !stopped else {
+            held = ""
+            thinkBuffer = ""
+            return ""
+        }
+        var output = ""
+        switch thinkState {
+        case .undecided:
+            thinkState = .done
+            output = processVisible(held, final: true)
+        case .inThink:
+            thinkState = .done
+            let content = thinkBuffer
+            thinkBuffer = ""
+            if !content.trimmed.isEmpty { unclosedThinking = true }
+            output = processVisible(content, final: true)
+        case .done:
+            output = processVisible(held, final: true)
+        }
+        visibleText += output
+        return output
+    }
+
+    /// 处理确定要显示的文本：去掉零散的思考标签、检查停止词、扣住可能是停止词开头的尾巴。
+    private mutating func processVisible(_ text: String, final: Bool) -> String {
         held = ""
-        visibleText += rest
-        return rest
+        let cleaned = hideThinking ? Self.removingThinkTags(text) : text
+        let (emit, stop) = scanForStops(cleaned)
+        if stop || final { return emit }
+        var guards = stops
+        if hideThinking { guards += ["<think>", "</think>"] }
+        let tail = Self.partialSuffix(of: emit, matching: guards)
+        held = tail
+        return String(emit.dropLast(tail.count))
+    }
+
+    static func removingThinkTags(_ text: String) -> String {
+        guard text.contains("think>") else { return text }
+        return text.replacingOccurrences(of: "<think>", with: "").replacingOccurrences(of: "</think>", with: "")
     }
 
     private mutating func scanForStops(_ text: String) -> (String, Bool) {
@@ -177,5 +227,45 @@ public enum ResponseSanitizer {
             s += "*"
         }
         return s
+    }
+}
+
+/// 一次回复的定稿结果：要保存的正文和诊断信息。
+public struct ReplyOutcome: Sendable, Equatable {
+    /// 要保存的正文。为空表示确实没有可保存的内容。
+    public var content: String
+    /// 流式显示出来的字符数
+    public var visibleCount: Int
+    /// 清理后的字符数
+    public var cleanedCount: Int
+    /// 清理后为空，改用了只去掉标签的原文
+    public var usedFallback: Bool
+
+    /// 一行诊断记录，写进「诊断日志」
+    public func logLine(stopReason: String, saved: Bool, error: String?) -> String {
+        var line = "回复定稿：显示 \(visibleCount) 字，清理后 \(cleanedCount) 字，停止原因 \(stopReason)"
+        if usedFallback { line += "，清理后为空，已改存原文" }
+        if let error { line += "，生成出错：\(error)" }
+        line += saved ? "，已保存 \(content.count) 字" : "，未保存"
+        return line
+    }
+}
+
+public enum ReplyFinalizer {
+    /// 生成结束（或中途出错、被停止）后，决定保存什么。
+    /// 规则：已经显示给用户的正文不能因为清理而整段消失。
+    public static func finalize(visible: String, speakerName: String) -> ReplyOutcome {
+        let cleaned = ResponseSanitizer.clean(visible, speakerName: speakerName)
+        if !cleaned.isEmpty {
+            return ReplyOutcome(content: cleaned, visibleCount: visible.count, cleanedCount: cleaned.count, usedFallback: false)
+        }
+        let fallback = StreamingTextFilter.removingThinkTags(visible).trimmed
+        let meaningful = fallback.unicodeScalars.contains { CharacterSet.alphanumerics.contains($0) }
+        return ReplyOutcome(
+            content: meaningful ? fallback : "",
+            visibleCount: visible.count,
+            cleanedCount: 0,
+            usedFallback: meaningful
+        )
     }
 }

@@ -103,10 +103,82 @@ final class StreamingTests: XCTestCase {
         XCTAssertEqual(out, "正文")
     }
 
+    // MARK: 吞回复的几种情形
+
+    func testUnclosedThinkingIsReleasedAsText() {
+        var f = StreamingTextFilter(stopSequences: [], hideThinking: true)
+        var out = ""
+        for piece in ["<think>", "她放下酒杯，", "笑了笑。"] { out += f.feed(piece) }
+        XCTAssertEqual(out, "", "思考段未闭合前不显示")
+        out += f.finish()
+        XCTAssertEqual(out, "她放下酒杯，笑了笑。", "直到结束都没闭合的思考段要当正文放出")
+        XCTAssertTrue(f.unclosedThinking)
+    }
+
+    func testThinkTagInMiddleDoesNotHideRest() {
+        var f = StreamingTextFilter(stopSequences: [], hideThinking: true)
+        var out = ""
+        for piece in ["二楼还有", "一间。<thi", "nk>窗户朝着钟楼", "。</think>别开窗。"] { out += f.feed(piece) }
+        out += f.finish()
+        XCTAssertEqual(out, "二楼还有一间。窗户朝着钟楼。别开窗。")
+        XCTAssertFalse(f.unclosedThinking)
+    }
+
+    func testLoneClosingTagKeepsPrecedingText() {
+        var f = StreamingTextFilter(stopSequences: [], hideThinking: true)
+        var out = ""
+        for piece in ["她叹了口气。", "</thi", "nk>", "说吧。"] { out += f.feed(piece) }
+        out += f.finish()
+        XCTAssertEqual(out, "她叹了口气。说吧。")
+    }
+
+    func testStartsInsideThinkingWhenTemplateOpenedIt() {
+        var f = StreamingTextFilter(stopSequences: [], hideThinking: true, startsInsideThinking: true)
+        var out = ""
+        for piece in ["用户在问房间", "</think>\n\n", "有一间。"] { out += f.feed(piece) }
+        out += f.finish()
+        XCTAssertEqual(out, "有一间。")
+        XCTAssertGreaterThan(f.hiddenThinkingCount, 0)
+    }
+
+    func testLeadingWhitespaceBeforeThinkBlock() {
+        var f = StreamingTextFilter(stopSequences: [], hideThinking: true)
+        var out = ""
+        for piece in ["\n", " <think>", "想一想</think>", "好。"] { out += f.feed(piece) }
+        out += f.finish()
+        XCTAssertEqual(out, "好。")
+    }
+
+    func testLongReplyStreamsCompletely() {
+        var f = StreamingTextFilter(stopSequences: ["\n旅人：", "\n旅人:"], hideThinking: true)
+        let sentence = "她把灯芯挑亮了一些，*目光落在窗外的钟楼上*，“今晚风大，别乱跑。”\n"
+        var out = ""
+        for _ in 0..<200 {
+            for ch in sentence { out += f.feed(String(ch)) }
+        }
+        out += f.finish()
+        XCTAssertEqual(out, String(repeating: sentence, count: 200))
+        XCTAssertFalse(f.stopped)
+    }
+
+    func testFinalizerKeepsVisibleTextWhenCleaningEmptiesIt() {
+        // 正常情况
+        let normal = ReplyFinalizer.finalize(visible: "  艾琳：你好  ", speakerName: "艾琳")
+        XCTAssertEqual(normal.content, "你好")
+        XCTAssertFalse(normal.usedFallback)
+        // 只有空白或孤零零的符号：确实没有可保存的内容
+        XCTAssertEqual(ReplyFinalizer.finalize(visible: "  \n ", speakerName: "艾琳").content, "")
+        XCTAssertEqual(ReplyFinalizer.finalize(visible: "*", speakerName: "艾琳").content, "")
+        let line = normal.logLine(stopReason: "自然结束", saved: true, error: nil)
+        XCTAssertTrue(line.contains("显示 9 字") && line.contains("已保存 2 字"), line)
+    }
+
     func testSanitizer() {
         XCTAssertEqual(ResponseSanitizer.clean("  艾琳：你好  ", speakerName: "艾琳"), "你好")
         XCTAssertEqual(ResponseSanitizer.clean("<think>x</think>\n回答", speakerName: "A"), "回答")
-        XCTAssertEqual("思考中</think>答".strippingThinkBlocks(), "答")
+        XCTAssertEqual("<think>先想想</think>\n答".strippingThinkBlocks(), "\n答")
+        // 孤立的结束标签只删标签，不能把前面的正文一起删掉
+        XCTAssertEqual("她笑了。</think>坐吧。".strippingThinkBlocks(), "她笑了。坐吧。")
         XCTAssertEqual(ResponseSanitizer.clean("*她笑了。* 要是敢在满月那*", speakerName: "A"), "*她笑了。* 要是敢在满月那")
         XCTAssertEqual(ResponseSanitizer.clean("*她笑了。*", speakerName: "A"), "*她笑了。*")
         XCTAssertEqual(ResponseSanitizer.clean("好。*她伸手勾了勾门框", speakerName: "A"), "好。*她伸手勾了勾门框*")

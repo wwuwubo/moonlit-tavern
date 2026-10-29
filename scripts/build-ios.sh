@@ -25,6 +25,7 @@ xcodebuild \
   CODE_SIGNING_ALLOWED=NO \
   CODE_SIGNING_REQUIRED=NO \
   CODE_SIGN_IDENTITY="" \
+  CURRENT_PROJECT_VERSION="${GITHUB_RUN_NUMBER:-0}" \
   build 2>&1 | tee logs/xcodebuild.log
 
 APP="build/DerivedData/Build/Products/Release-iphoneos/MoonlitTavern.app"

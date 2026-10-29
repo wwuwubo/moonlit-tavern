@@ -48,6 +48,10 @@ struct ChatView: View {
                             onEdit: {
                                 editText = message.content
                                 editing = message
+                            },
+                            onUseSuggestion: { text in
+                                draft = text
+                                composerFocused = true
                             }
                         )
                         .id(message.id)
@@ -212,6 +216,7 @@ struct MessageRow: View {
     let message: ChatMessage
     let isLast: Bool
     let onEdit: () -> Void
+    var onUseSuggestion: (String) -> Void = { _ in }
 
     var body: some View {
         let isUser = message.role == .user
@@ -279,6 +284,13 @@ struct MessageRow: View {
                         .buttonStyle(.plain)
                         .foregroundStyle(Theme.textSecondary)
                         .disabled(state.isGenerating)
+                        .accessibilityIdentifier("regenerateButton")
+                        Button(action: onEdit) {
+                            Label("改写", systemImage: "pencil")
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(Theme.textSecondary)
+                        .disabled(state.isGenerating)
                     }
                     if let stats = message.stats, stats.generatedTokens > 0 {
                         Text(statsText(stats))
@@ -286,6 +298,11 @@ struct MessageRow: View {
                     }
                 }
                 .font(.caption)
+
+                if !isUser, isLast, state.generation?.chatID != chat.id {
+                    SuggestionPanel(chat: chat, message: message, onEdit: onUseSuggestion)
+                        .padding(.top, 4)
+                }
             }
             if !isUser { Spacer(minLength: 40) }
         }
@@ -324,6 +341,87 @@ struct MessageRow: View {
             state.deleteMessage(message.id, in: chat.id)
         } label: { Label("删除（含之后的消息）", systemImage: "trash") }
         .disabled(state.isGenerating)
+    }
+}
+
+/// 角色回复下方的剧情选项：点一下直接发出，笔形按钮先填进输入框改一改。
+struct SuggestionPanel: View {
+    @EnvironmentObject private var state: AppState
+    let chat: ChatSession
+    let message: ChatMessage
+    let onEdit: (String) -> Void
+
+    var body: some View {
+        let working = state.suggestionJob?.messageID == message.id
+        let options = message.suggestions ?? []
+        VStack(alignment: .leading, spacing: 8) {
+            if !options.isEmpty {
+                Text("接下来")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Theme.textTertiary)
+                ForEach(Array(options.enumerated()), id: \.offset) { index, option in
+                    HStack(spacing: 0) {
+                        Button {
+                            state.sendUserMessage(option, in: chat.id)
+                        } label: {
+                            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                                Text("\(index + 1)")
+                                    .font(.caption.monospacedDigit().weight(.semibold))
+                                    .foregroundStyle(Theme.amber)
+                                Text(option)
+                                    .font(.callout)
+                                    .foregroundStyle(Theme.textPrimary)
+                                    .multilineTextAlignment(.leading)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Spacer(minLength: 0)
+                            }
+                            .padding(.vertical, 9)
+                            .padding(.leading, 12)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(state.isGenerating)
+                        .accessibilityLabel(option)
+                        .accessibilityIdentifier("suggestion-\(index)")
+                        Button {
+                            onEdit(option)
+                        } label: {
+                            Image(systemName: "pencil")
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 9)
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(Theme.textTertiary)
+                        .accessibilityLabel("改一改再发")
+                        .accessibilityIdentifier("suggestion-edit-\(index)")
+                    }
+                    .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Theme.surfaceRaised))
+                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Theme.hairline))
+                }
+            }
+            HStack(spacing: 14) {
+                if working {
+                    ProgressView().controlSize(.mini)
+                    Text(options.isEmpty ? "正在想几个选项…" : "正在换一组…")
+                        .foregroundStyle(Theme.textSecondary)
+                        .accessibilityIdentifier("suggestionsWorking")
+                } else {
+                    Button {
+                        state.requestSuggestions(chatID: chat.id, messageID: message.id, manual: true)
+                    } label: {
+                        Label(options.isEmpty ? "给我几个选项" : "换一组选项", systemImage: "sparkles")
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Theme.amber)
+                    .disabled(state.isGenerating)
+                    .accessibilityIdentifier("refreshSuggestions")
+                }
+                Text("也可以在下面自由输入")
+                    .foregroundStyle(Theme.textTertiary)
+            }
+            .font(.caption)
+        }
+        .frame(maxWidth: 560, alignment: .leading)
     }
 }
 

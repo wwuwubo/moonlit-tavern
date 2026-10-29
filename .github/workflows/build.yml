@@ -3,9 +3,10 @@ name: Build
 # 每次推送到 main：
 # 1. 运行 MoonlitCore 单元测试
 # 2. Xcode 27（iOS 27 SDK）构建 iphoneos Release，不签名，打包 IPA 并检查结构
-# 3. Xcode 26.6（iOS 26 SDK）兼容性构建（不阻塞发布）
-# 4. 把 IPA、日志、Xcode 工程发布到 Releases（预发布），方便在 iPad 上直接下载
-# 构建日志同时推送到 ci-logs/<标签> 分支。
+# 3. iPad 模拟器端到端 UI 测试（真实 App + 真实 GGUF 模型）
+# 4. Xcode 26.6（iOS 26 SDK）兼容性构建（不阻塞发布）
+# 5. 单元测试、真机构建、UI 测试全部通过后，才把 IPA、日志、Xcode 工程发布到 Releases（预发布）
+# 构建号 = 本次运行编号，每个安装包唯一。构建日志同时推送到 ci-logs/<标签> 分支。
 
 on:
   push:
@@ -25,6 +26,7 @@ concurrency:
 env:
   LLAMA_TAG: b11960
   LLAMA_SHA256: feba05e0b7cb5e682ae3354abb455bf9723ae2cc95c69e24d073264e6a34d759
+  UITEST_MODEL_URL: https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF/resolve/main/Qwen3.5-0.8B-Q4_K_M.gguf
 
 jobs:
   core-tests:
@@ -121,9 +123,49 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: scripts/publish-logs.sh xcode26
 
+  simulator-ui-tests:
+    name: iPad 模拟器端到端测试
+    needs: [core-tests]
+    runs-on: xcode-27
+    timeout-minutes: 80
+    steps:
+      - uses: actions/checkout@v5
+      - name: 安装 XcodeGen
+        run: brew install xcodegen
+      - name: 缓存 llama.cpp 模拟器切片
+        uses: actions/cache@v4
+        with:
+          path: build/llama-sim
+          key: llama-sim-${{ env.LLAMA_TAG }}-arm64
+      - name: 缓存测试模型
+        uses: actions/cache@v4
+        with:
+          path: models/uitest
+          key: uitest-model-${{ env.UITEST_MODEL_URL }}
+      - name: 运行全部 UI 测试（任何一项失败，本次构建不发布）
+        run: scripts/run-simulator-test.sh "$UITEST_MODEL_URL"
+      - name: 导出测试附件
+        if: always()
+        run: |
+          mkdir -p logs/attachments
+          xcrun xcresulttool export attachments --path build/UITest.xcresult --output-path logs/attachments 2>&1 | tail -5 || true
+      - name: 推送日志到 ci-logs 分支
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: scripts/publish-logs.sh simulator-uitest
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: uitest-log
+          path: |
+            logs/uitest.log
+            logs/screenshots/uitest-steps.txt
+          if-no-files-found: ignore
+
   release:
     name: 发布预发布版本
-    needs: [core-tests, ios-build]
+    needs: [core-tests, ios-build, simulator-ui-tests]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v5
@@ -138,13 +180,17 @@ jobs:
           TAG="build-${{ github.run_number }}"
           SHORT_SHA="${GITHUB_SHA::7}"
           cp artifacts/core-tests-log/core-tests.log artifacts/ios-build/ 2>/dev/null || true
+          cp artifacts/uitest-log/uitest-steps.txt artifacts/ios-build/uitest-steps.txt 2>/dev/null || \
+            cp artifacts/uitest-log/screenshots/uitest-steps.txt artifacts/ios-build/uitest-steps.txt 2>/dev/null || true
           cat > notes.md <<EOF
-          自动构建 #${{ github.run_number }}（提交 ${SHORT_SHA}），Xcode 27 / iOS 27 SDK。
+          自动构建 #${{ github.run_number }}（版本 0.2.0，构建号 ${{ github.run_number }}，提交 ${SHORT_SHA}），Xcode 27 / iOS 27 SDK。
+          单元测试、真机构建与 IPA 结构检查、iPad 模拟器端到端 UI 测试均已通过。
 
           - **MoonlitTavern-unsigned.ipa**：iphoneos Release 构建，**未签名**。需要先用全能签（或其他签名工具）配合你自己的证书与描述文件签名后再安装。
           - **MoonlitTavern-XcodeProject.zip**：完整源码 + 工程描述（project.yml）。不含 llama.xcframework，可用 scripts/fetch-llama.sh 下载。
           - **build-logs.zip**：编译日志、IPA 结构检查日志。
           - **core-tests.log**：核心逻辑单元测试输出。
+          - **uitest-steps.txt**：模拟器端到端测试的逐步记录。
 
           构建记录：${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           EOF
