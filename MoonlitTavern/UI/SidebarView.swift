@@ -8,6 +8,7 @@ struct SidebarView: View {
 
     @State private var editingCharacter: TavernCharacter?
     @State private var showCardImporter = false
+    @State private var showPasteCardImporter = false
     @State private var showGroupCreator = false
     @State private var showLorebooks = false
     @State private var search = ""
@@ -76,6 +77,10 @@ struct SidebarView: View {
                     Button { showCardImporter = true } label: {
                         Label("导入角色卡（PNG / JSON）", systemImage: "square.and.arrow.down")
                     }
+                    Button { showPasteCardImporter = true } label: {
+                        Label("粘贴 JSON 角色卡", systemImage: "doc.on.clipboard")
+                    }
+                    .accessibilityIdentifier("pasteCardMenuItem")
                     Button { showGroupCreator = true } label: {
                         Label("新建群聊", systemImage: "person.3")
                     }
@@ -92,6 +97,9 @@ struct SidebarView: View {
         }
         .documentImporter(isPresented: $showCardImporter, types: [.png, .json, .image, .data]) { url in
             _ = state.importCharacterCard(from: url)
+        }
+        .sheet(isPresented: $showPasteCardImporter) {
+            ClipboardCardImportView()
         }
         .sheet(item: $editingCharacter) { character in
             CharacterEditorView(character: character)
