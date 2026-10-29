@@ -133,7 +133,7 @@ struct CardImportView: View {
                 dismiss()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
                     DocumentPicker.open([.png, .json, .image, .data]) { url in
-                        appState.importCharacterCard(from: url)
+                        _ = appState.importCharacterCard(from: url)
                     }
                 }
             } label: {
