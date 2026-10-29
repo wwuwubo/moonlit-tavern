@@ -66,6 +66,11 @@ final class AppState: ObservableObject {
     @Published var banner: Banner?
     @Published var lastPlans: [UUID: PlanSnapshot] = [:]
     @Published var lastStats: GenerationStats?
+    /// 某个存档的最近一次剧情行动建议，以及它关联的角色回复 ID。
+    @Published var suggestedActions: [UUID: [String]] = [:]
+    @Published var suggestedActionSourceIDs: [UUID: UUID] = [:]
+    @Published var actionsLoadingChatID: UUID?
+    var actionsTask: Task<Void, Never>?
     @Published var benchmarks: [BenchmarkResult] = []
     @Published var thermalLabel = DeviceMetrics.thermalLabel
 
@@ -356,6 +361,22 @@ final class AppState: ObservableObject {
             show(.error, "读不到文件「\(fileName)」：\(error.localizedDescription)")
             return nil
         }
+        return importCharacterCard(data: data, fileName: fileName)
+    }
+
+    /// 将用户明确复制到剪贴板的 JSON 导入角色卡，绕开系统文件选择器。
+    @discardableResult
+    func importCharacterCard(jsonText: String) -> TavernCharacter? {
+        let trimmed = jsonText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            show(.error, "剪贴板没有 JSON 文本")
+            return nil
+        }
+        return importCharacterCard(data: Data(trimmed.utf8), fileName: "剪贴板 JSON")
+    }
+
+    @discardableResult
+    private func importCharacterCard(data: Data, fileName: String) -> TavernCharacter? {
         EngineLog.shared.append("导入角色卡：\(fileName)，\(data.count) 字节")
         do {
             let result = try CharacterCardCodec.importCard(from: data)

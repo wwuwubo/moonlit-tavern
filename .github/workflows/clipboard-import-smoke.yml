@@ -1,0 +1,73 @@
+name: Clipboard JSON Import Smoke
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: clipboard-fix-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core-tests:
+    name: Character card parser unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - run: cd Packages/MoonlitCore && swift test
+
+  simulator-import:
+    name: iPad simulator JSON paste import and candidate build
+    needs: core-tests
+    runs-on: xcode-27
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Cache llama.cpp simulator framework
+        uses: actions/cache@v4
+        with:
+          path: build/llama-sim
+          key: llama-sim-b11960-arm64
+      - name: Run focused paste-import UI test
+        env:
+          MOONLIT_SMOKE_TEST: "1"
+          LLAMA_TAG: b11960
+        run: scripts/run-simulator-test.sh https://example.com/unused.gguf
+      - name: Fetch production iOS inference framework
+        run: |
+          rm -rf Vendor/llama.xcframework
+          scripts/fetch-llama.sh
+      - name: Regenerate iOS project
+        run: xcodegen generate
+      - name: Compile real iPadOS Release
+        run: scripts/build-ios.sh
+      - name: Package unsigned IPA
+        run: scripts/package-ipa.sh
+      - name: Verify IPA file structure
+        run: scripts/verify-ipa.sh build/MoonlitTavern-unsigned.ipa
+      - name: Upload verified IPA candidate
+        uses: actions/upload-artifact@v5
+        with:
+          name: moonlit-tavern-clipboard-story-0.1.1-18
+          path: |
+            build/MoonlitTavern-unsigned.ipa
+            build/MoonlitTavern-unsigned.ipa.sha256
+          if-no-files-found: error
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: clipboard-import-test-diagnostics
+          path: |
+            logs/uitest.log
+            logs/screenshots/
+            logs/simulators.txt
+          if-no-files-found: ignore
+

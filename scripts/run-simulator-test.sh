@@ -34,13 +34,15 @@ xcodegen generate
 
 # ---- 模型 ----
 MODEL_DIR="$ROOT/models/uitest"
-mkdir -p "$MODEL_DIR"
-MODEL="$MODEL_DIR/$(basename "$MODEL_URL")"
-if [[ ! -f "$MODEL" ]]; then
-  curl -fL --retry 3 --retry-delay 5 -o "$MODEL.part" "$MODEL_URL"
-  mv "$MODEL.part" "$MODEL"
+if [[ "${MOONLIT_SMOKE_TEST:-0}" != "1" ]]; then
+  mkdir -p "$MODEL_DIR"
+  MODEL="$MODEL_DIR/$(basename "$MODEL_URL")"
+  if [[ ! -f "$MODEL" ]]; then
+    curl -fL --retry 3 --retry-delay 5 -o "$MODEL.part" "$MODEL_URL"
+    mv "$MODEL.part" "$MODEL"
+  fi
+  ls -lh "$MODEL"
 fi
-ls -lh "$MODEL"
 
 # ---- 模拟器 ----
 xcrun simctl list devices available > logs/simulators.txt
@@ -52,8 +54,17 @@ xcrun simctl bootstatus "$UDID" -b
 
 # ---- 运行 UI 测试 ----
 set -o pipefail
-export TEST_RUNNER_MOONLIT_MODEL_DIR="$MODEL_DIR"
+if [[ "${MOONLIT_SMOKE_TEST:-0}" != "1" ]]; then
+  export TEST_RUNNER_MOONLIT_MODEL_DIR="$MODEL_DIR"
+fi
 export TEST_RUNNER_SCREENSHOT_DIR="$ROOT/logs/screenshots"
+TEST_FILTER=()
+if [[ "${MOONLIT_SMOKE_TEST:-0}" == "1" ]]; then
+  TEST_FILTER=(
+    "-only-testing:MoonlitTavernUITests/MoonlitTavernUITests/testPasteJSONCharacterCard"
+    "-only-testing:MoonlitTavernUITests/MoonlitTavernUITests/testActionChoicesPanelAndManualInput"
+  )
+fi
 export TEST_RUNNER_MOONLIT_MAX_TOKENS="${MAX_TOKENS:-48}"
 export TEST_RUNNER_MOONLIT_CONTEXT="${CONTEXT:-2048}"
 xcodebuild \
@@ -64,4 +75,5 @@ xcodebuild \
   -derivedDataPath build/SimDerivedData \
   -resultBundlePath build/UITest.xcresult \
   CODE_SIGN_IDENTITY=- \
+  "${TEST_FILTER[@]}" \
   test 2>&1 | tee logs/uitest.log

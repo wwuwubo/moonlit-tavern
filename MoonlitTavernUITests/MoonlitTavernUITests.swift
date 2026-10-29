@@ -99,6 +99,53 @@ final class MoonlitTavernUITests: XCTestCase {
         XCTAssertTrue(imported, "通过文档选择器导入角色卡失败")
     }
 
+    /// 独立于文件选择器的集成测试：输入真实 V2 JSON，确认出现新角色。
+    func testPasteJSONCharacterCard() throws {
+        let app = XCUIApplication()
+        app.launchEnvironment["MOONLIT_UITEST"] = "1"
+        app.launchEnvironment["MOONLIT_UITEST_RUN"] = UUID().uuidString
+        XCUIDevice.shared.orientation = .landscapeLeft
+        app.launch()
+
+        let add = element(app, "addMenu")
+        XCTAssertTrue(add.waitForExistence(timeout: 15), "未找到新增菜单")
+        add.tap()
+        let pasteItem = element(app, "pasteCardMenuItem")
+        XCTAssertTrue(pasteItem.waitForExistence(timeout: 10), "缺少粘贴 JSON 入口")
+        pasteItem.tap()
+
+        let editor = element(app, "cardJSONEditor")
+        XCTAssertTrue(editor.waitForExistence(timeout: 10), "粘贴导入界面没有文本输入框")
+        editor.tap()
+        editor.typeText(#"{"spec":"chara_card_v2","spec_version":"2.0","data":{"name":"ClipboardCardSmoke","description":"smoke test","personality":"calm","scenario":"test","first_mes":"hello"}}"#)
+        let importButton = element(app, "confirmPasteCardImport")
+        XCTAssertTrue(importButton.waitForExistence(timeout: 10), "缺少确认导入按钮")
+        XCTAssertTrue(importButton.isEnabled, "输入 JSON 后导入按钮仍被禁用")
+        importButton.tap()
+        let name = app.staticTexts["ClipboardCardSmoke"]
+        XCTAssertTrue(name.waitForExistence(timeout: 15), "导入后侧栏没有显示 ClipboardCardSmoke")
+        save("clipboard-json-card-imported", app)
+    }
+
+    /// 即使模型尚未加载，也必须允许用户自由输入、刷新或选择后续行动。
+    func testActionChoicesPanelAndManualInput() throws {
+        let app = XCUIApplication()
+        app.launchEnvironment["MOONLIT_UITEST"] = "1"
+        app.launchEnvironment["MOONLIT_UITEST_RUN"] = UUID().uuidString
+        XCUIDevice.shared.orientation = .landscapeLeft
+        app.launch()
+        let panel = element(app, "actionChoicesPanel")
+        XCTAssertTrue(panel.waitForExistence(timeout: 20), "角色开场白下没有剧情选项区域")
+        let refresh = element(app, "refreshActionChoices")
+        XCTAssertTrue(refresh.exists, "缺少独立的生成或刷新剧情选项按钮")
+        let manual = element(app, "manualActionInput")
+        XCTAssertTrue(manual.exists, "缺少自由输入入口")
+        manual.tap()
+        let composer = element(app, "composer")
+        XCTAssertTrue(composer.exists, "自由输入入口没有正常输入框")
+        save("story-options-manual-input", app)
+    }
+
     func testLocalRoleplayEndToEnd() throws {
         let app = XCUIApplication()
         app.launchEnvironment["MOONLIT_UITEST"] = "1"

@@ -17,6 +17,9 @@ extension AppState {
     func sendUserMessage(_ text: String, in chatID: UUID) {
         let trimmed = text.trimmed
         guard !trimmed.isEmpty, generation == nil, var chat = chat(chatID) else { return }
+        cancelSuggestedActions()
+        suggestedActions[chatID] = []
+        suggestedActionSourceIDs.removeValue(forKey: chatID)
         let persona = persona(for: chat)
         chat.append(ChatMessage(role: .user, speakerName: persona.name, content: trimmed))
         saveChat(chat)
@@ -61,6 +64,10 @@ extension AppState {
 
     private func startReply(chatID: UUID, speakerID: UUID?, regenerating messageID: UUID?) {
         guard generation == nil, let chat = chat(chatID) else { return }
+        cancelSuggestedActions()
+        suggestedActions[chatID] = []
+        suggestedActionSourceIDs.removeValue(forKey: chatID)
+        let oldLeafID = chat.activeLeafID
         let speaker: TavernCharacter
         if let speakerID, let c = character(speakerID) {
             speaker = c
@@ -75,12 +82,37 @@ extension AppState {
             purpose: .reply, phase: .processingPrompt, progress: nil, regeneratingMessageID: messageID
         )
         generationTask = Task { [weak self] in
-            await self?.runReply(chatID: chatID, speaker: speaker, regenerating: messageID)
+            guard let self else { return }
+            await self.runReply(chatID: chatID, speaker: speaker, regenerating: messageID)
+            // 回复已存储，生成独立选项；选项失败不会撤销角色回复。
+            if let updated = self.chat(chatID), updated.activeLeafID != oldLeafID,
+               updated.activePath().last?.role == .assistant,
+               self.generation == nil {
+                self.refreshSuggestedActions(in: chatID)
+            }
         }
     }
 
     private func runReply(chatID: UUID, speaker: TavernCharacter, regenerating messageID: UUID?) async {
+        var didSave = false
         defer {
+            // 异常、手动停止和上下文切换也要保存已经展示给用户的可见文字。
+            if !didSave {
+                let raw = generation?.text ?? ""
+                let partial = ResponseSanitizer.clean(raw, speakerName: speaker.name)
+                if !partial.isEmpty, var savedChat = chat(chatID) {
+                    let note = partial + "\n\n[生成中断，以上内容已自动保存]"
+                    let reply = ChatMessage(role: .assistant, speakerID: speaker.id,
+                                            speakerName: speaker.name, content: note)
+                    if let messageID {
+                        savedChat.addSibling(reply, siblingOf: messageID)
+                    } else {
+                        savedChat.append(reply)
+                    }
+                    saveChat(savedChat)
+                    EngineLog.shared.append("保留中断回复：可见字符数 \(partial.count)")
+                }
+            }
             generation = nil
             generationTask = nil
         }
@@ -130,8 +162,13 @@ extension AppState {
 
             let raw = generation?.text ?? ""
             let content = ResponseSanitizer.clean(raw, speakerName: speaker.name)
+            EngineLog.shared.append("回复诊断：流式可见字符 \(raw.count)，清理后 \(content.count)，结束原因 \(finalStats?.stopReason ?? "未知")，取消 \(cancelled)")
             guard !content.isEmpty else {
-                if !cancelled { show(.warning, "模型没有输出内容。可以重新生成，或检查提示词模板设置。") }
+                if !cancelled {
+                    show(.warning, raw.isEmpty
+                         ? "本次没有产生可见正文（可能一直停留在思考阶段或遇到停止词）。"
+                         : "生成内容被格式清理后为空。已记录诊断，可重试或关闭思考模式。")
+                }
                 return
             }
             var stats = finalStats
@@ -148,6 +185,7 @@ extension AppState {
             chat.historyAnchor = plan.historyAnchor
             chat.loreState = plan.lore.nextState
             saveChat(chat)
+            didSave = true
             if let stats { lastStats = stats }
 
             if !cancelled, settings.memory.autoSummarize, plan.truncatedMessages.count >= settings.memory.summarizeBatch {
