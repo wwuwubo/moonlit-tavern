@@ -218,27 +218,27 @@ if let s = stats3 {
 }
 
 // ---------- 剧情选项：沿用回复的上下文，之后的下一轮也不整段重算 ----------
-var chatS = chat
-chatS.append(ChatMessage(role: .assistant, speakerID: erin.id, speakerName: erin.name,
+var chatOpt = chat
+chatOpt.append(ChatMessage(role: .assistant, speakerID: erin.id, speakerName: erin.name,
                          content: ResponseSanitizer.clean(reply3, speakerName: erin.name)))
-let planS = plan(for: chatS, characters: [erin], speaker: erin)
-let reqS = ReplySuggestions.request(plan: planS, userName: "旅人", characterNames: [erin.name], count: 3, sampling: sampling)
-let (outS, statsS, errS) = await generate("剧情选项", reqS)
-let options = ReplySuggestions.parse(outS, userName: "旅人", characterNames: [erin.name], limit: 3)
+let planOpt = plan(for: chatOpt, characters: [erin], speaker: erin)
+let reqOpt = ReplySuggestions.request(plan: planOpt, userName: "旅人", characterNames: [erin.name], count: 3, sampling: sampling)
+let (outOpt, statsOpt, errOpt) = await generate("剧情选项", reqOpt)
+let options = ReplySuggestions.parse(outOpt, userName: "旅人", characterNames: [erin.name], limit: 3)
 log("整理出的选项：" + options.map { "「\($0)」" }.joined(separator: " "))
-check("剧情选项：生成并整理出至少 2 个", errS == nil && options.count >= 2, critical: false, "\(options.count) 个")
-cleanOutputChecks("剧情选项", outS)
-if let s = statsS {
+check("剧情选项：生成并整理出至少 2 个", errOpt == nil && options.count >= 2, critical: false, "\(options.count) 个")
+cleanOutputChecks("剧情选项", outOpt)
+if let s = statsOpt {
     check("剧情选项：复用回复的上下文缓存", s.promptTokensEvaluated < s.promptTokens / 2, critical: false,
           "复用 \(s.promptTokens - s.promptTokensEvaluated)/\(s.promptTokens) tok，计算 \(s.promptTokensEvaluated) tok")
 }
-var chatN = chatS
-chatN.append(ChatMessage(role: .user, speakerName: "旅人", content: options.first ?? "那就要那间房。"))
-let planN = plan(for: chatN, characters: [erin], speaker: erin)
-let reqN = GenerationRequest(messages: planN.messages, prefill: planN.prefill, sampling: sampling, maxNewTokens: 120, stopSequences: planN.stopSequences)
-let (replyN, statsN, errN) = await generate("选了选项之后的下一轮", reqN)
-check("选项之后的下一轮：生成成功", errN == nil && !replyN.isBlank, "生成 \(statsN?.generatedTokens ?? 0) tok")
-if let s = statsN {
+var chatNext = chatOpt
+chatNext.append(ChatMessage(role: .user, speakerName: "旅人", content: options.first ?? "那就要那间房。"))
+let planNext = plan(for: chatNext, characters: [erin], speaker: erin)
+let reqNext = GenerationRequest(messages: planNext.messages, prefill: planNext.prefill, sampling: sampling, maxNewTokens: 120, stopSequences: planNext.stopSequences)
+let (replyNext, statsNext, errNext) = await generate("选了选项之后的下一轮", reqNext)
+check("选项之后的下一轮：生成成功", errNext == nil && !replyNext.isBlank, "生成 \(statsNext?.generatedTokens ?? 0) tok")
+if let s = statsNext {
     check("选项之后的下一轮：不整段重算", s.promptTokensEvaluated < s.promptTokens / 2, critical: false,
           "复用 \(s.promptTokens - s.promptTokensEvaluated)/\(s.promptTokens) tok，计算 \(s.promptTokensEvaluated) tok")
 }

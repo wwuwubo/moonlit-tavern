@@ -7,6 +7,7 @@
 set -euo pipefail
 
 MODEL_URL="${1:?模型地址}"
+echo "bash ${BASH_VERSION}"
 TAG="${LLAMA_TAG:-b11960}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
@@ -72,5 +73,5 @@ xcodebuild \
   -derivedDataPath build/SimDerivedData \
   -resultBundlePath build/UITest.xcresult \
   CODE_SIGN_IDENTITY=- \
-  "${TEST_FILTER[@]}" \
+  ${TEST_FILTER[@]+"${TEST_FILTER[@]}"} \
   test 2>&1 | tee logs/uitest.log

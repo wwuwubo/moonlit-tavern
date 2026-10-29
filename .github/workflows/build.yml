@@ -143,7 +143,10 @@ jobs:
           path: models/uitest
           key: uitest-model-${{ env.UITEST_MODEL_URL }}
       - name: 运行全部 UI 测试（任何一项失败，本次构建不发布）
-        run: scripts/run-simulator-test.sh "$UITEST_MODEL_URL"
+        run: |
+          mkdir -p logs
+          set -o pipefail
+          scripts/run-simulator-test.sh "$UITEST_MODEL_URL" 2>&1 | tee logs/sim-run.log
       - name: 导出测试附件
         if: always()
         run: |

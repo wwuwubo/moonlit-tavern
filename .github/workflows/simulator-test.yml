@@ -38,7 +38,10 @@ jobs:
           path: models/uitest
           key: uitest-model-${{ inputs.model_url }}
       - name: 运行端到端测试
-        run: scripts/run-simulator-test.sh "${{ inputs.model_url }}"
+        run: |
+          mkdir -p logs
+          set -o pipefail
+          scripts/run-simulator-test.sh "${{ inputs.model_url }}" 2>&1 | tee logs/sim-run.log
       - name: 导出测试附件
         if: always()
         run: |
