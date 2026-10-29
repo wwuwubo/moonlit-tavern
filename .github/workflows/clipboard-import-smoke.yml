@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - fix/clipboard-json-import-20261029
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
