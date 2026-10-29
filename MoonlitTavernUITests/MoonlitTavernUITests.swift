@@ -291,6 +291,11 @@ final class MoonlitTavernUITests: XCTestCase {
                     save("06-面板-\(tab)", app)
                 }
             }
+            // 「角色」面板里的「我的身份」带性别选项
+            let gender = element(app, "personaGenderPicker")
+            let hasGender = gender.waitForExistence(timeout: 5)
+            log("身份性别选项：\(hasGender)")
+            XCTAssertTrue(hasGender, "「我的身份」里没有性别选项")
         } else {
             log("右侧面板未显示")
         }
