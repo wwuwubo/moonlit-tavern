@@ -60,6 +60,20 @@ targets:
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true
         ITSAppUsesNonExemptEncryption: false
+        # 在「文件」里长按角色卡或模型 › 共享，可以直接交给月下酒馆打开
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: 角色卡（JSON）
+            LSHandlerRank: Alternate
+            LSItemContentTypes:
+              - public.json
+          - CFBundleTypeName: 角色卡（PNG）
+            LSHandlerRank: Alternate
+            LSItemContentTypes:
+              - public.png
+          - CFBundleTypeName: GGUF 模型
+            LSHandlerRank: Owner
+            LSItemContentTypes:
+              - com.ggml.gguf
         UTImportedTypeDeclarations:
           - UTTypeIdentifier: com.ggml.gguf
             UTTypeDescription: GGUF 模型

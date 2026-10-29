@@ -109,15 +109,17 @@ final class MoonlitTavernUITests: XCTestCase {
         XCTAssertTrue(imported, "从文件夹导入角色卡失败")
     }
 
-    /// 通过系统文档选择器导入：我的 iPad › 月下酒馆 › 角色卡 › uitest-picker.json
-    private func importCardThroughPicker(_ app: XCUIApplication) {
+    /// 通过系统文档选择器导入：我的 iPad › 月下酒馆 › 角色卡 › 测试卡。
+    /// button 是导入页上的哪个按钮（UIKit 选择器或备用的 SwiftUI 选择器）。
+    private func importCardThroughPicker(_ app: XCUIApplication, button: String, file fileName: String,
+                                         character: String, shot: String, tag: String) {
         XCTAssertTrue(openCardImport(app), "导入界面没有打开")
-        let pickButton = element(app, "pickCardFileButton")
+        let pickButton = element(app, button)
         for _ in 0..<4 where !pickButton.isHittable { app.swipeUp() }
-        log("选择器导入：按钮可点 \(pickButton.isHittable)")
+        log("\(tag)：按钮可点 \(pickButton.isHittable)")
         pickButton.tap()
         sleep(4)
-        save("13-文档选择器", app)
+        save("\(shot)-文档选择器", app)
 
         // 选择器里的文件夹和文件是集合视图的单元格，标签后面会带「2 items」、日期、大小等信息，
         // 所以按前缀匹配；位置列表按完整标签匹配
@@ -140,27 +142,31 @@ final class MoonlitTavernUITests: XCTestCase {
             }
             return nil
         }
-        _ = tapFirst(["Browse", "浏览"], timeout: 3)
-        let location = tapFirst(["On My iPad", "我的 iPad", "在我的 iPad 上"])
-        log("选择器导入：位置 \(location ?? "未找到")")
-        sleep(1)
-        let appFolder = tapFirst(["月下酒馆", "MoonlitTavern"], prefix: true)
-        log("选择器导入：App 文件夹 \(appFolder ?? "未找到")")
-        sleep(1)
-        let cardFolder = tapFirst(["角色卡"], prefix: true)
-        log("选择器导入：角色卡文件夹 \(cardFolder ?? "未找到")")
-        sleep(1)
-        let file = tapFirst(["uitest-picker"], prefix: true)
-        log("选择器导入：文件 \(file ?? "未找到")")
+        // 第二次打开选择器时，它会停在上次的文件夹里，先看看文件是不是已经在眼前
+        var file = tapFirst([fileName], prefix: true, timeout: 3)
+        if file == nil {
+            _ = tapFirst(["Browse", "浏览"], timeout: 3)
+            let location = tapFirst(["On My iPad", "我的 iPad", "在我的 iPad 上"])
+            log("\(tag)：位置 \(location ?? "未找到")")
+            sleep(1)
+            let appFolder = tapFirst(["月下酒馆", "MoonlitTavern"], prefix: true)
+            log("\(tag)：App 文件夹 \(appFolder ?? "未找到")")
+            sleep(1)
+            let cardFolder = tapFirst(["角色卡"], prefix: true)
+            log("\(tag)：角色卡文件夹 \(cardFolder ?? "未找到")")
+            sleep(1)
+            file = tapFirst([fileName], prefix: true)
+        }
+        log("\(tag)：文件 \(file ?? "未找到")")
         if file == nil {
             // 界面层级快照（逐个读取单元格在界面变化时会失败，所以整体取一次）
-            log("选择器导入：界面层级 \(String(app.debugDescription.prefix(3000)))")
-            save("13-文档选择器-未找到文件", app)
+            log("\(tag)：界面层级 \(String(app.debugDescription.prefix(3000)))")
+            save("\(shot)-文档选择器-未找到文件", app)
         }
-        let imported = app.staticTexts["选择器旅者"].waitForExistence(timeout: 15)
-        log("选择器导入：侧栏出现「选择器旅者」：\(imported)")
-        save("13-选择器导入后", app)
-        XCTAssertTrue(imported, "通过系统文档选择器导入角色卡失败")
+        let imported = app.staticTexts[character].waitForExistence(timeout: 15)
+        log("\(tag)：侧栏出现「\(character)」：\(imported)")
+        save("\(shot)-选择器导入后", app)
+        XCTAssertTrue(imported, "\(tag)失败")
     }
 
     // MARK: - 测试
@@ -362,9 +368,12 @@ final class MoonlitTavernUITests: XCTestCase {
         XCTAssertEqual(count(app, "message-assistant"), replies2, "重新生成应替换显示的版本，而不是追加一条")
         save("11b-重新生成", app)
 
-        // 13. 导入角色卡：App 文件夹、系统文档选择器
+        // 13. 导入角色卡：App 文件夹、系统文档选择器、备用选择器
         importCardFromFolder(app)
-        importCardThroughPicker(app)
+        importCardThroughPicker(app, button: "pickCardFileButton", file: "uitest-picker",
+                                character: "选择器旅者", shot: "13", tag: "选择器导入")
+        importCardThroughPicker(app, button: "pickCardFileButtonAlt", file: "uitest-alt",
+                                character: "备用旅者", shot: "13c", tag: "备用选择器导入")
 
         // 14. 再次重启：导入的角色仍在
         app.terminate()
@@ -372,8 +381,9 @@ final class MoonlitTavernUITests: XCTestCase {
         XCTAssertTrue(composer.waitForExistence(timeout: 30), "第二次重启后聊天输入框没有出现")
         let keptFolder = app.staticTexts["测试旅者"].waitForExistence(timeout: 15)
         let keptPicker = app.staticTexts["选择器旅者"].waitForExistence(timeout: 5)
-        log("第二次重启后：「测试旅者」\(keptFolder)，「选择器旅者」\(keptPicker)")
-        XCTAssertTrue(keptFolder && keptPicker, "重启后导入的角色不见了")
+        let keptAlt = app.staticTexts["备用旅者"].waitForExistence(timeout: 5)
+        log("第二次重启后：「测试旅者」\(keptFolder)，「选择器旅者」\(keptPicker)，「备用旅者」\(keptAlt)")
+        XCTAssertTrue(keptFolder && keptPicker && keptAlt, "重启后导入的角色不见了")
         save("14-重启后导入的角色", app)
         log("测试流程结束")
     }

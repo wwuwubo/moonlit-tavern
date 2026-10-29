@@ -140,10 +140,20 @@ struct CardImportView: View {
                 Label("从「文件」中选择…", systemImage: "folder")
             }
             .accessibilityIdentifier("pickCardFileButton")
+            Button {
+                let appState = state
+                dismiss()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                    appState.showAlternateImporter = true
+                }
+            } label: {
+                Label("备用：换一种方式打开「文件」", systemImage: "folder.badge.questionmark")
+            }
+            .accessibilityIdentifier("pickCardFileButtonAlt")
         } header: {
             Text("从「文件」中选择")
         } footer: {
-            Text("点一下文件就会导入，不需要再按「打开」。如果选择器打不开或一片空白，请用上面两种方式。")
+            Text("两个按钮用的是系统选择器的两种打开方式，点一下文件就会导入。如果都打不开或一片空白，用上面两种方式；也可以在「文件」App 里长按角色卡 › 共享 › 月下酒馆。")
         }
     }
 }

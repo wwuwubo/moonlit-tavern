@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 import UIKit
 import MoonlitCore
 
@@ -72,6 +73,8 @@ final class AppState: ObservableObject {
     var generationTask: Task<Void, Never>?
     /// 正在生成剧情选项的那条回复
     @Published var suggestionJob: SuggestionJob?
+    /// 备用的系统文件选择器（SwiftUI fileImporter，单选）。挂在根视图上，全 App 只有这一个
+    @Published var showAlternateImporter = false
     var suggestionTask: Task<Void, Never>?
     /// 因内存不足自动降低上下文时，记录用户原本设置的值。
     var reducedContextRequest: Int?
@@ -216,7 +219,7 @@ final class AppState: ObservableObject {
     /// UI 自动化测试：在「角色卡」文件夹里放两张测试卡，一张从 App 内的文件夹列表导入，一张走系统文件选择器。
     private static func writeUITestCards() {
         ensureCardFolder()
-        for (file, name) in [("uitest-card.json", "测试旅者"), ("uitest-picker.json", "选择器旅者")] {
+        for (file, name) in [("uitest-card.json", "测试旅者"), ("uitest-picker.json", "选择器旅者"), ("uitest-alt.json", "备用旅者")] {
             let card: [String: Any] = [
                 "spec": "chara_card_v2",
                 "spec_version": "2.0",
@@ -391,6 +394,77 @@ final class AppState: ObservableObject {
             }
     }
 
+    /// 从其他 App 交过来的文件（「文件」里长按 › 共享 › 月下酒馆），或备用选择器选中的文件。
+    /// GGUF 当模型导入；JSON / PNG 先按角色卡识别，不是角色卡的 JSON 再按世界书识别。
+    func importOpenedFile(_ url: URL, source: String) {
+        let name = url.lastPathComponent
+        EngineLog.shared.append("\(source)：\(name)")
+        let ext = url.pathExtension.lowercased()
+        if ext == "gguf" {
+            Task { await models.importModel(from: url) }
+            return
+        }
+        guard ext == "json" || ext == "png" else {
+            show(.error, "「\(name)」不是角色卡、世界书或 GGUF 模型")
+            return
+        }
+        let accessed = url.startAccessingSecurityScopedResource()
+        defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+        let data: Data
+        do {
+            data = try Self.readFile(at: url)
+        } catch {
+            EngineLog.shared.append("读取失败：\(name)：\(error)")
+            show(.error, "读不到文件「\(name)」：\(error.localizedDescription)")
+            return
+        }
+        importCardOrLorebook(data: data, fileName: name)
+    }
+
+    /// 拖进 App 的文件（iPad 分屏时从「文件」里把角色卡拖到月下酒馆）。只收 JSON 和 PNG。
+    func importDropped(_ providers: [NSItemProvider]) -> Bool {
+        var accepted = false
+        for provider in providers {
+            let type: UTType
+            if provider.hasItemConformingToTypeIdentifier(UTType.png.identifier) {
+                type = .png
+            } else if provider.hasItemConformingToTypeIdentifier(UTType.json.identifier) {
+                type = .json
+            } else {
+                continue
+            }
+            accepted = true
+            let base = provider.suggestedName ?? "拖入的角色卡"
+            let name = base.lowercased().hasSuffix(".\(type.preferredFilenameExtension ?? "")") ? base : "\(base).\(type.preferredFilenameExtension ?? "json")"
+            EngineLog.shared.append("拖入文件：\(name)")
+            provider.loadDataRepresentation(forTypeIdentifier: type.identifier) { data, error in
+                let message = error.map { "\($0)" }
+                Task { @MainActor in
+                    if let data {
+                        self.importCardOrLorebook(data: data, fileName: name)
+                    } else {
+                        EngineLog.shared.append("拖入文件读取失败：\(name)：\(message ?? "没有数据")")
+                        self.show(.error, "读不到拖入的文件「\(name)」")
+                    }
+                }
+            }
+        }
+        if !accepted { show(.error, "只能拖入角色卡（JSON / PNG）或世界书（JSON）") }
+        return accepted
+    }
+
+    /// 先按角色卡识别；不是角色卡的 JSON 再按世界书识别；都不是时显示角色卡解析失败的原因。
+    func importCardOrLorebook(data: Data, fileName: String) {
+        if (try? CharacterCardCodec.importCard(from: data)) != nil {
+            importCharacterCard(data: data, fileName: fileName)
+        } else if !PNGChunks.isPNG(data),
+                  (try? WorldInfoFormats.importLorebook(from: data, fallbackName: "")) != nil {
+            importLorebook(data: data, fileName: fileName)
+        } else {
+            importCharacterCard(data: data, fileName: fileName)
+        }
+    }
+
     /// 将用户明确复制到剪贴板的 JSON 导入角色卡，绕开系统文件选择器。
     @discardableResult
     func importCharacterCard(jsonText: String) -> TavernCharacter? {
@@ -475,7 +549,17 @@ final class AppState: ObservableObject {
         let accessed = url.startAccessingSecurityScopedResource()
         defer { if accessed { url.stopAccessingSecurityScopedResource() } }
         do {
-            let data = try Self.readFile(at: url)
+            return importLorebook(data: try Self.readFile(at: url), fileName: url.lastPathComponent)
+        } catch {
+            show(.error, "世界书导入失败：\(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    @discardableResult
+    func importLorebook(data: Data, fileName: String) -> Lorebook? {
+        EngineLog.shared.append("导入世界书：\(fileName)，\(data.count) 字节")
+        do {
             let book: Lorebook
             if PNGChunks.isPNG(data) {
                 // 从角色卡 PNG 里取世界书
@@ -485,7 +569,7 @@ final class AppState: ObservableObject {
                 }
                 book = embedded
             } else {
-                book = try WorldInfoFormats.importLorebook(from: data, fallbackName: url.deletingPathExtension().lastPathComponent)
+                book = try WorldInfoFormats.importLorebook(from: data, fallbackName: (fileName as NSString).deletingPathExtension)
             }
             var copy = book
             copy.id = UUID()
