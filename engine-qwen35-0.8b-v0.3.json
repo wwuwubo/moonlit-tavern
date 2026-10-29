@@ -1,0 +1,358 @@
+{
+  "architecture" : "qwen35",
+  "checks" : [
+    {
+      "critical" : true,
+      "detail" : "生成 160 tok",
+      "name" : "单人角色扮演：生成成功",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "输出中不含 <think>",
+      "name" : "第一轮：无思考段泄漏",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "输出中不含 <|im_start|>\/<|im_end|>",
+      "name" : "第一轮：无模板符号泄漏",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "没有乱码替换字符",
+      "name" : "第一轮：UTF-8 完整",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "计算 529\/529",
+      "name" : "第一轮：首次计算完整提示词",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "生成 106 tok",
+      "name" : "第二轮：生成成功",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "输出中不含 <think>",
+      "name" : "第二轮：无思考段泄漏",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "输出中不含 <|im_start|>\/<|im_end|>",
+      "name" : "第二轮：无模板符号泄漏",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "没有乱码替换字符",
+      "name" : "第二轮：UTF-8 完整",
+      "passed" : true
+    },
+    {
+      "critical" : false,
+      "detail" : "复用 689\/710 tok，只计算新增的 21 tok",
+      "name" : "第二轮：复用 KV 缓存",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "生成 106 tok",
+      "name" : "重新生成：成功",
+      "passed" : true
+    },
+    {
+      "critical" : false,
+      "detail" : "部分回退成功，只重算 1 tok",
+      "name" : "重新生成：KV 回退",
+      "passed" : true
+    },
+    {
+      "critical" : false,
+      "detail" : "3 个",
+      "name" : "剧情选项：生成并整理出至少 2 个",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "输出中不含 <think>",
+      "name" : "剧情选项：无思考段泄漏",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "输出中不含 <|im_start|>\/<|im_end|>",
+      "name" : "剧情选项：无模板符号泄漏",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "没有乱码替换字符",
+      "name" : "剧情选项：UTF-8 完整",
+      "passed" : true
+    },
+    {
+      "critical" : false,
+      "detail" : "复用 0\/972 tok，计算 972 tok",
+      "name" : "剧情选项：复用回复的上下文缓存",
+      "passed" : false
+    },
+    {
+      "critical" : true,
+      "detail" : "生成 120 tok",
+      "name" : "选项之后的下一轮：生成成功",
+      "passed" : true
+    },
+    {
+      "critical" : false,
+      "detail" : "复用 0\/875 tok，计算 875 tok",
+      "name" : "选项之后的下一轮：不整段重算",
+      "passed" : false
+    },
+    {
+      "critical" : false,
+      "detail" : "停止原因 长度上限，29 字",
+      "name" : "继续：截断的回复停在长度上限",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "原 29 字 + 续写 115 字 = 144 字",
+      "name" : "继续：续写成功并接在原文后面",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "输出中不含 <think>",
+      "name" : "继续：无思考段泄漏",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "输出中不含 <|im_start|>\/<|im_end|>",
+      "name" : "继续：无模板符号泄漏",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "没有乱码替换字符",
+      "name" : "继续：UTF-8 完整",
+      "passed" : true
+    },
+    {
+      "critical" : false,
+      "detail" : "复用 997\/1022 tok，计算 25 tok",
+      "name" : "继续：复用截断那次的上下文",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "停止原因 用户停止，已生成 6 tok",
+      "name" : "停止生成：及时停止",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "选中 莱恩",
+      "name" : "群聊：被点名的角色发言",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "生成 74 tok",
+      "name" : "群聊：生成成功",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "输出中没有「艾琳：」「旅人：」开头的行",
+      "name" : "群聊：不替其他角色发言",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "输出中不含 <think>",
+      "name" : "群聊：无思考段泄漏",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "输出中不含 <|im_start|>\/<|im_end|>",
+      "name" : "群聊：无模板符号泄漏",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "没有乱码替换字符",
+      "name" : "群聊：UTF-8 完整",
+      "passed" : true
+    },
+    {
+      "critical" : false,
+      "detail" : "摘要 66 字，事件 0 条，关系 0 条，状态 1 项",
+      "name" : "摘要：生成并解析",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "提示词 3581 tok，生成 31 tok，首 token 641.05 秒",
+      "name" : "长上下文：4096 上下文跑通",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "卸载后引擎状态为空",
+      "name" : "卸载模型",
+      "passed" : true
+    }
+  ],
+  "contextLength" : 4096,
+  "footprintAfterLoadMB" : 664.7069091796875,
+  "format" : "chatml",
+  "gpuOffload" : true,
+  "host" : "Apple M1 (Virtual)",
+  "loadSeconds" : 3.293761968612671,
+  "model" : "Qwen3.5-0.8B-Q4_K_M.gguf",
+  "os" : "macOS 27.0.1",
+  "physicalMemoryGB" : 7,
+  "runs" : [
+    {
+      "evaluated" : 529,
+      "footprintMB" : 799.394775390625,
+      "genTPS" : 1.7360094676227964,
+      "generated" : 160,
+      "name" : "单人角色扮演 · 第一轮",
+      "promptTPS" : 3.6362567798265477,
+      "promptTokens" : 529,
+      "stopReason" : "长度上限",
+      "text" : "*她放下酒杯，指尖在银灰色的短发上轻轻敲了个响。* 钟楼的钟声已经敲了三下，大概该停摆的时候到了吧？*\n\n*她站起身，走到窗边，伸手推了推那扇挂着“月亮”二字磨砂玻璃的门。* 不过... 这扇门要是开了，今晚的月光就太暗了。* 毕竟，魔物最怕光，尤其是那三百年没来过的、带着微弱余温的月。*\n\n*她眯起眼睛，眼神像看猎物一样盯着你。* 既然你求了，那就别怪我不客气。但这钱，得按“月光”算。别想省这口气——*她嘴角勾起一抹玩味的笑* 除非你想让",
+      "ttft" : 145.56149399280548
+    },
+    {
+      "evaluated" : 21,
+      "footprintMB" : 838.0823974609375,
+      "genTPS" : 1.8415526070530992,
+      "generated" : 106,
+      "name" : "单人角色扮演 · 第二轮",
+      "promptTPS" : 3.5098163552784163,
+      "promptTokens" : 710,
+      "stopReason" : "自然结束",
+      "text" : "*她把手插在兜里，把下巴凑近了些。*\n\n*那声音……\"咚、咚、咚……\"那是它自己念咒语了。* 若是真到那晚，它大概会借着月光，把酒馆里的所有杂物都掏出来，直接炸了。*\n\n*她顿了顿，语气变得严肃起来。* 要是真的遇到什么危险……* 哪怕只有三分钟，我也绝不会让你活得太久。* 除非，你愿意成为我的下一个诱饵。",
+      "ttft" : 6.078724026679993
+    },
+    {
+      "evaluated" : 1,
+      "footprintMB" : 838.0511474609375,
+      "genTPS" : 1.7061441065912721,
+      "generated" : 106,
+      "name" : "重新生成（同一提示词）",
+      "promptTPS" : 1.4218237517188872,
+      "promptTokens" : 710,
+      "stopReason" : "自然结束",
+      "text" : "*她把手插在兜里，把下巴凑近了些。*\n\n*那声音……\"咚、咚、咚……\"那是它自己念咒语了。* 若是真到那晚，它大概会借着月光，把酒馆里的所有杂物都掏出来，直接炸了。*\n\n*她顿了顿，语气变得严肃起来。* 要是真的遇到什么危险……* 哪怕只有三分钟，我也绝不会让你活得太久。* 除非，你愿意成为我的下一个诱饵。",
+      "ttft" : 0.747528076171875
+    },
+    {
+      "evaluated" : 972,
+      "footprintMB" : 838.2386474609375,
+      "genTPS" : 1.46573436894539,
+      "generated" : 58,
+      "name" : "剧情选项",
+      "promptTPS" : 4.222052272282793,
+      "promptTokens" : 972,
+      "stopReason" : "自然结束",
+      "text" : "推门走去，声音压低了：“那就别怪我不客气。”\n2. 眯起眼睛，手指轻轻捏着杯沿：“那家伙，今晚会不会想我？”\n3. 突然压低声音，盯着对方眼睛：“要是钟楼的钟声停下来的时候……\"",
+      "ttft" : 230.2874630689621
+    },
+    {
+      "evaluated" : 875,
+      "footprintMB" : 838.4573974609375,
+      "genTPS" : 2.0612102137308765,
+      "generated" : 120,
+      "name" : "选了选项之后的下一轮",
+      "promptTPS" : 3.5192356911602722,
+      "promptTokens" : 875,
+      "stopReason" : "长度上限",
+      "text" : "*她轻哼一声，伸手推了推门框，动作却没动。* 哟，胆子还是这么大。*\n\n*她嘴角勾起一抹似有若无的笑意，目光扫过门口。* 真是的，这么晚了还不进屋。* 倒是挺神秘。*\n\n*她微微侧身，示意你进来。* 走吧，别光想着钱。* 既然要住三晚，今晚要是睡不着……* 我就得给你倒杯新的酒，毕竟，我早就盘点了镇上每个人的“愿望”。* 说吧，旅人",
+      "ttft" : 248.68182003498077
+    },
+    {
+      "evaluated" : 998,
+      "footprintMB" : 838.5198974609375,
+      "genTPS" : 2.8047556912372142,
+      "generated" : 24,
+      "name" : "继续 · 先截断在 24 token",
+      "promptTPS" : 5.618744472304944,
+      "promptTokens" : 998,
+      "stopReason" : "长度上限",
+      "text" : "*她轻叹一口气，手指无意识地摩挲着杯沿。* 讲起这“月下镇",
+      "ttft" : 177.65617096424103
+    },
+    {
+      "evaluated" : 25,
+      "footprintMB" : 838.5355224609375,
+      "genTPS" : 2.784256015757455,
+      "generated" : 80,
+      "name" : "继续 · 接着写",
+      "promptTPS" : 5.5702461514434045,
+      "promptTokens" : 1022,
+      "stopReason" : "长度上限",
+      "text" : "”来……\n\n*她抬起头，眼神锐利地锁定在你脸上。* 传说它诞生于百年前的一个黄昏，那个太阳被神罚了三百年不升起，连月亮都吝啬给凡人照面。* 于是，在月光与萤石灯的夹缝中，才有人类出现。*\n\n*她压低声音，语气变得急促起来。* 这里",
+      "ttft" : 4.516695976257324
+    },
+    {
+      "evaluated" : 710,
+      "footprintMB" : 838.5355224609375,
+      "genTPS" : 2.802765185639665,
+      "generated" : 6,
+      "name" : "停止生成（收到 6 段后取消）",
+      "promptTPS" : 5.961881323693176,
+      "promptTokens" : 710,
+      "stopReason" : "用户停止",
+      "text" : "*她把手插在兜里",
+      "ttft" : 119.12558102607727
+    },
+    {
+      "evaluated" : 693,
+      "footprintMB" : 838.6448974609375,
+      "genTPS" : 2.8016690511087825,
+      "generated" : 74,
+      "name" : "群聊 · 莱恩发言",
+      "promptTPS" : 6.190868108291154,
+      "promptTokens" : 693,
+      "stopReason" : "自然结束",
+      "text" : "*他低头看了一眼腰间那把未磨亮的剑，然后抬起头看向酒馆角落。* 嗯……不是。\n\n*他伸出手指轻轻抚摸着剑柄，动作很慢，像是在审视一件被遗忘的物件。* 每年满月前，我会路过这里。那时候，镇子太安静了。月光很亮，魔物也不乱跑。",
+      "ttft" : 111.9738519191742
+    },
+    {
+      "evaluated" : 493,
+      "footprintMB" : 838.6761474609375,
+      "genTPS" : 2.7958401670732553,
+      "generated" : 101,
+      "name" : "记忆摘要",
+      "promptTPS" : 6.247195890630476,
+      "promptTokens" : 493,
+      "stopReason" : "自然结束",
+      "text" : "摘要：艾琳因钟楼下钟声即将停摆而提议将房间租金改为“月光”，并暗示若拒绝则需承担更重的代价，同时询问旅人钟楼晚间是否有异常声响。\n- 艾琳→旅人：从戒备转为信任\n- 地点=城门口\n- 时间=雨夜\n关系：\n- 艾琳→旅人：从戒备转为信任\n状态：\n- 地点=城门口\n- 时间=雨夜",
+      "ttft" : 78.91668701171875
+    },
+    {
+      "evaluated" : 3581,
+      "footprintMB" : 839.0823974609375,
+      "genTPS" : 2.2951240718248656,
+      "generated" : 31,
+      "name" : "长上下文（接近 4096 tok）",
+      "promptTPS" : 5.586490793898985,
+      "promptTokens" : 3581,
+      "stopReason" : "自然结束",
+      "text" : "这是一段描写酒馆夜晚、骑士与旅人互动的连续记录，展现了月光、账本、风铃与炉火交织的静谧氛围。",
+      "ttft" : 641.0488250255585
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+run: 6 (40816810940)
+sha: 5baf498f2017bc3452117b1cd4c1bbebce248595
+label: engine-qwen35-0.8b-v0.3
+date: 2026-10-29T04:55:41Z
