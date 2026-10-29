@@ -12,6 +12,9 @@ final class DocumentPicker: NSObject, UIDocumentPickerDelegate {
     /// 选择器弹出期间保持代理存活（UIKit 对 delegate 是弱引用）
     private static var active: DocumentPicker?
 
+    /// 弹出前的准备，由 AppState 注入：停下剧情选项、卸载本地模型，给系统选择器腾出内存。
+    static var prepare: (@MainActor () async -> Void)?
+
     private let onPick: ([URL]) -> Void
     private let onCancel: () -> Void
 
@@ -58,14 +61,17 @@ final class DocumentPicker: NSObject, UIDocumentPickerDelegate {
         let delegate = DocumentPicker(onPick: onPick, onCancel: onCancel)
         picker.delegate = delegate
         active = delegate
-        // 从菜单里触发时，菜单还在收起；稍等再弹出，避免两次呈现撞在一起被 UIKit 拒绝
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+        Task { @MainActor in
+            await prepare?()
+            // 从菜单里触发时，菜单还在收起；稍等再弹出，避免两次呈现撞在一起被 UIKit 拒绝
+            try? await Task.sleep(nanoseconds: 350_000_000)
             guard let top = topViewController() else {
                 EngineLog.shared.append("文档选择器：找不到可用于弹出的界面")
                 active = nil
                 return
             }
-            EngineLog.shared.append("文档选择器：弹出（\(type(of: top))）")
+            let host = String(describing: type(of: top)).split(separator: "<").first.map(String.init) ?? "?"
+            EngineLog.shared.append("文档选择器：弹出（\(host)，\(PickerDiagnostics.opened())）")
             top.present(picker, animated: true)
         }
     }
@@ -84,14 +90,48 @@ final class DocumentPicker: NSObject, UIDocumentPickerDelegate {
 
     func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
         Self.active = nil
-        EngineLog.shared.append("文档选择器：选中 \(urls.map(\.lastPathComponent).joined(separator: "、"))")
+        EngineLog.shared.append("文档选择器：选中 \(urls.map(\.lastPathComponent).joined(separator: "、"))\(PickerDiagnostics.closed())")
         onPick(urls)
     }
 
     func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
         Self.active = nil
-        EngineLog.shared.append("文档选择器：已取消")
+        EngineLog.shared.append("文档选择器：已取消\(PickerDiagnostics.closed())")
         onCancel()
+    }
+}
+
+/// 记下系统选择器从弹出到关闭之间的情况，写进诊断日志：弹出时的内存、开了多久、期间有没有内存警告。
+/// 两种选择器不会同时打开，共用一份记录。
+@MainActor
+enum PickerDiagnostics {
+    private static var openedAt: Date?
+    private static var memoryWarned = false
+
+    /// 选择器弹出时调用，返回当时的内存读数。
+    static func opened() -> String {
+        openedAt = Date()
+        memoryWarned = false
+        return memorySummary
+    }
+
+    static func noteMemoryWarning() {
+        if openedAt != nil { memoryWarned = true }
+    }
+
+    /// 选择器关闭时调用，返回「（打开 N 秒，期间收到内存警告）」；没有对应的弹出记录时返回空串。
+    static func closed() -> String {
+        guard let start = openedAt else { return "" }
+        openedAt = nil
+        var text = "打开 \(Int(Date().timeIntervalSince(start).rounded())) 秒"
+        if memoryWarned { text += "，期间收到内存警告" }
+        return "（\(text)）"
+    }
+
+    static var memorySummary: String {
+        let footprint = Int(DeviceMetrics.footprintMB() ?? -1)
+        let available = Int(DeviceMetrics.availableMemoryMB())
+        return "进程 \(footprint) MB，还可用 \(available) MB"
     }
 }
 

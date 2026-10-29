@@ -132,6 +132,7 @@ final class AppState: ObservableObject {
         }
         selectedChatID = chats.first?.id
         observeSystemEvents()
+        DocumentPicker.prepare = { [weak self] in await self?.releaseMemoryForSystemPicker() }
         Task { await models.refresh() }
     }
 
@@ -155,6 +156,7 @@ final class AppState: ObservableObject {
 
     func handleMemoryWarning() {
         EngineLog.shared.append("收到系统内存警告，进程内存 \(Int(DeviceMetrics.footprintMB() ?? -1)) MB")
+        PickerDiagnostics.noteMemoryWarning()
         cancelSuggestions()
         if generation != nil {
             stopGeneration()
@@ -165,6 +167,32 @@ final class AppState: ObservableObject {
                 modelState = .unloaded
                 show(.warning, "系统内存紧张，已卸载本地模型。下次发送消息时会自动重新加载。")
             }
+        }
+    }
+
+    /// 系统文件选择器弹出前调用：停下剧情选项，卸载本地模型。
+    ///
+    /// 选择器和「文件」的服务跑在系统的其他进程里。8 GB 的 iPad 上 4B 模型常驻时，
+    /// 打开选择器会把系统推到内存警告，选择器随即被系统收掉，看起来就是一片空白、点了没反应或自己取消。
+    /// 模型在下次发送消息时自动重新加载。正在生成回复时不卸载，以免打断。
+    func releaseMemoryForSystemPicker() async {
+        cancelSuggestions()
+        guard generation == nil else {
+            EngineLog.shared.append("系统选择器：正在生成，本地模型保持加载")
+            return
+        }
+        guard modelState.isLoaded || llama.info != nil else { return }
+        let before = Int(DeviceMetrics.footprintMB() ?? -1)
+        await llama.unload()
+        modelState = .unloaded
+        EngineLog.shared.append("系统选择器：先卸载本地模型腾出内存（进程 \(before) → \(Int(DeviceMetrics.footprintMB() ?? -1)) MB）")
+    }
+
+    /// 打开备用选择器（根视图上的 SwiftUI fileImporter），同样先腾出内存。
+    func openAlternateImporter() {
+        Task {
+            await releaseMemoryForSystemPicker()
+            showAlternateImporter = true
         }
     }
 

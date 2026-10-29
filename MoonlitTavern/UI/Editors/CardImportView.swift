@@ -144,7 +144,7 @@ struct CardImportView: View {
                 let appState = state
                 dismiss()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                    appState.showAlternateImporter = true
+                    appState.openAlternateImporter()
                 }
             } label: {
                 Label("备用：换一种方式打开「文件」", systemImage: "folder.badge.questionmark")
