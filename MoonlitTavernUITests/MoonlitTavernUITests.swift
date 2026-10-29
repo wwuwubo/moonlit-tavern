@@ -53,16 +53,20 @@ final class MoonlitTavernUITests: XCTestCase {
         let item = app.buttons["导入角色卡（PNG / JSON）"]
         guard item.waitForExistence(timeout: 5) else { log("导入角色卡：菜单里没有导入项"); return }
         item.tap()
-        sleep(2)
+        sleep(4)
         save("12-文档选择器", app)
 
-        func tapFirst(_ labels: [String], timeout: TimeInterval = 8) -> String? {
+        // 选择器里的文件夹和文件是集合视图的单元格，标签后面会带「2 items」、日期、大小等信息，
+        // 所以按前缀匹配；位置列表按完整标签匹配
+        func tapFirst(_ labels: [String], prefix: Bool = false, timeout: TimeInterval = 8) -> String? {
             let deadline = Date().addingTimeInterval(timeout)
+            let format = prefix ? "label BEGINSWITH %@" : "label == %@"
             while Date() < deadline {
                 for label in labels {
-                    for query in [app.cells, app.staticTexts, app.buttons] {
-                        let e = query.matching(NSPredicate(format: "label == %@", label)).firstMatch
-                        if e.exists && e.isHittable { e.tap(); return label }
+                    let queries = prefix ? [app.cells] : [app.cells, app.staticTexts, app.buttons]
+                    for query in queries {
+                        let e = query.matching(NSPredicate(format: format, label)).firstMatch
+                        if e.exists && e.isHittable { e.tap(); return e.label }
                     }
                 }
                 sleep(1)
@@ -74,13 +78,13 @@ final class MoonlitTavernUITests: XCTestCase {
         let location = tapFirst(["On My iPad", "我的 iPad", "在我的 iPad 上"])
         log("导入角色卡：位置 \(location ?? "未找到")")
         sleep(1)
-        let folder = tapFirst(["月下酒馆", "MoonlitTavern"])
+        let folder = tapFirst(["月下酒馆", "MoonlitTavern"], prefix: true)
         log("导入角色卡：文件夹 \(folder ?? "未找到")")
         sleep(1)
-        let file = tapFirst(["uitest-card.json", "uitest-card"])
+        let file = tapFirst(["uitest-card"], prefix: true)
         log("导入角色卡：文件 \(file ?? "未找到")")
         if file == nil {
-            let visible = app.staticTexts.allElementsBoundByIndex.prefix(40).map(\.label).joined(separator: " | ")
+            let visible = app.cells.allElementsBoundByIndex.prefix(40).map(\.label).joined(separator: " | ")
             log("导入角色卡：当前可见文字 \(visible)")
             save("12-文档选择器-未找到文件", app)
             return
