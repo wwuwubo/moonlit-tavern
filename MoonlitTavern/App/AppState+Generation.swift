@@ -140,7 +140,10 @@ extension AppState {
                 prefill: plan.prefill,
                 sampling: settings.sampling,
                 maxNewTokens: settings.effectiveMaxNewTokens,
-                stopSequences: plan.stopSequences
+                stopSequences: plan.stopSequences,
+                minNewTokens: settings.minNewTokens,
+                // 末尾的回复前提醒只用这一次，下一轮会挪位置；在它前面存检查点
+                stableMessageCount: plan.tailCount > 0 ? plan.messages.count - plan.tailCount : nil
             )
             var finalStats: GenerationStats?
             var cancelled = false

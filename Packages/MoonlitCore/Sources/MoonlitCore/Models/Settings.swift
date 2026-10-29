@@ -217,6 +217,9 @@ public struct AppSettings: Codable, Hashable, Sendable {
     public var suggestions: SuggestionSettings
     /// 回复前提醒模型：接着用户最后说的话往下写，不要复述前文。小模型聊几轮后容易自说自话
     public var replyReminder: Bool
+    /// 写够长度再收尾：提醒里写明这段写多少字，前一部分不许模型输出结束符。
+    /// 小模型关掉思考后爱写短，没有这一条时常常一两百字就收尾
+    public var holdReplyLength: Bool
 
     public init(
         providerMode: ProviderMode = .local,
@@ -230,7 +233,8 @@ public struct AppSettings: Codable, Hashable, Sendable {
         loreTokenBudget: Int = 900,
         includeExampleDialogue: Bool = true,
         suggestions: SuggestionSettings = SuggestionSettings(),
-        replyReminder: Bool = true
+        replyReminder: Bool = true,
+        holdReplyLength: Bool = true
     ) {
         self.providerMode = providerMode
         self.local = local
@@ -244,11 +248,26 @@ public struct AppSettings: Codable, Hashable, Sendable {
         self.includeExampleDialogue = includeExampleDialogue
         self.suggestions = suggestions
         self.replyReminder = replyReminder
+        self.holdReplyLength = holdReplyLength
     }
 
     /// 实际使用的回复长度。
     public var effectiveMaxNewTokens: Int {
         replyLength.tokens ?? sampling.maxNewTokens
+    }
+
+    /// 回复至少写多少 token 才允许模型收尾（上限的 40%）。关掉「写够长度」时为 0。
+    public var minNewTokens: Int {
+        holdReplyLength ? effectiveMaxNewTokens * 2 / 5 : 0
+    }
+
+    /// 提醒里告诉模型的字数范围。中文每 token 约 1.3 字，取上限的 0.6～0.9 倍，
+    /// 让模型在顶到长度上限之前自己写完，不在半句话处被截断。
+    public var replyCharacterRange: ClosedRange<Int> {
+        let tokens = Double(effectiveMaxNewTokens)
+        func round50(_ x: Double) -> Int { max(50, Int((x / 50).rounded()) * 50) }
+        let lower = round50(tokens * 0.6)
+        return lower...max(lower + 50, round50(tokens * 0.9))
     }
 
     public static let builtinSystemPrompt = """
@@ -263,7 +282,7 @@ public struct AppSettings: Codable, Hashable, Sendable {
 
     enum CodingKeys: String, CodingKey {
         case providerMode, local, cloud, sampling, replyLength, persona, defaultSystemPrompt, memory
-        case loreTokenBudget, includeExampleDialogue, suggestions, replyReminder
+        case loreTokenBudget, includeExampleDialogue, suggestions, replyReminder, holdReplyLength
     }
 
     public init(from decoder: Decoder) throws {
@@ -280,5 +299,6 @@ public struct AppSettings: Codable, Hashable, Sendable {
         includeExampleDialogue = try c.decodeIfPresent(Bool.self, forKey: .includeExampleDialogue) ?? true
         suggestions = try c.decodeIfPresent(SuggestionSettings.self, forKey: .suggestions) ?? SuggestionSettings()
         replyReminder = try c.decodeIfPresent(Bool.self, forKey: .replyReminder) ?? true
+        holdReplyLength = try c.decodeIfPresent(Bool.self, forKey: .holdReplyLength) ?? true
     }
 }

@@ -74,6 +74,8 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
     private var chatTemplate: String?
     /// 混合 / 循环架构（Qwen3.5 的 DeltaNet 层等）：状态无法部分回退。
     private var needsCheckpoints = false
+    /// 结束符和控制符（<|im_end|>、<|im_start|> 等）。回复没写够长度时屏蔽它们，模型就没法提前收尾或另起一轮。
+    private var endTokens: [llama_token] = []
     /// 提示词末尾前一个位置的「部分状态」检查点（只含循环层状态，几十 MB）。
     /// 重新生成、停止后重来时，从这里恢复，不用整段重算。
     /// 混合 / 循环架构的状态检查点（只含循环层状态），新的在后。
@@ -207,6 +209,7 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
         cachedTokens = []
         checkpoints = []
         needsCheckpoints = llama_model_is_recurrent(loadedModel) || llama_model_is_hybrid(loadedModel)
+        endTokens = Self.endTokens(vocab: loadedVocab!)
 
         let template = llama_model_chat_template(loadedModel, nil).map { String(cString: $0) }
         chatTemplate = template
@@ -241,6 +244,17 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
         EngineLog.shared.append(String(format: "加载完成：%@，%.1f 秒，进程内存 %.0f MB",
                                        info.description, info.loadSeconds, info.footprintAfterLoadMB ?? -1))
         return info
+    }
+
+    private static func endTokens(vocab: OpaquePointer) -> [llama_token] {
+        let control = LLAMA_TOKEN_ATTR_CONTROL.rawValue
+        var result: [llama_token] = []
+        for token in 0..<llama_vocab_n_tokens(vocab) {
+            if llama_vocab_is_eog(vocab, token) || llama_vocab_get_attr(vocab, token).rawValue & control != 0 {
+                result.append(token)
+            }
+        }
+        return result
     }
 
     private func metaString(_ model: OpaquePointer, key: String) -> String? {
@@ -444,9 +458,11 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
         let limit = min(cachedTokens.count, promptTokens.count)
         while common < limit && cachedTokens[common] == promptTokens[common] { common += 1 }
         if common == promptTokens.count { common -= 1 } // 至少重新计算最后一个 token 以取得 logits
+        var reuse = cachedTokens.isEmpty ? "首次读取" : "接着上次"
         if common < cachedTokens.count {
             if llama_memory_seq_rm(memory, 0, Int32(common), -1) {
                 // 标准 Transformer：直接截断
+                reuse = "截断复用"
             } else if let ckpt = checkpoints
                         .filter({ $0.tokens.count <= common && promptTokens.starts(with: $0.tokens) })
                         .max(by: { $0.tokens.count < $1.tokens.count }),
@@ -454,13 +470,33 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
                       llama_memory_seq_rm(memory, 0, Int32(ckpt.tokens.count), -1) {
                 // 混合架构：恢复循环层检查点，再截断注意力层的 KV
                 common = ckpt.tokens.count
+                reuse = "从检查点接着算"
             } else {
                 llama_memory_clear(memory, true)
                 checkpoints = []
                 common = 0
+                reuse = "没有可用的缓存"
             }
         }
         cachedTokens = Array(promptTokens.prefix(common))
+
+        // 只用这一次的指令（回复前提醒、剧情选项说明）前面存一个检查点：
+        // 下一轮这些指令挪了位置，混合架构回退不了，从这里接着算就不用整段重读。
+        // 位置取「只渲染保留部分」和完整提示词的公共前缀，与具体模板无关。
+        var boundary = 0
+        if needsCheckpoints, let stable = request.stableMessageCount, stable > 0, stable < request.messages.count {
+            var head = request
+            head.messages = Array(request.messages.prefix(stable))
+            head.prefill = ""
+            let headText = renderPrompt(head, format: info.resolvedFormat,
+                                        disableThinking: config.disableThinking, supportsThinking: info.supportsThinking).text
+            let headTokens = Self.tokenize(vocab: vocab, text: headText, addSpecial: addBOS, parseSpecial: true)
+            let headLimit = min(headTokens.count, promptTokens.count - 1)
+            var n = 0
+            while n < headLimit && headTokens[n] == promptTokens[n] { n += 1 }
+            if n > common { boundary = n }
+        }
+        let boundaryOffset = boundary - common
 
         // ---- 处理提示词 ----
         let batchCapacity = max(Int(llama_n_batch(ctx)), 32)
@@ -468,11 +504,14 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
         defer { llama_batch_free(batch) }
 
         let toEvaluate = Array(promptTokens[common...])
+        EngineLog.shared.append("读提示词：共 \(promptTokens.count) token，复用 \(common)（\(reuse)），新读 \(toEvaluate.count)")
         emit(.progress(.processingPrompt, 0))
         var processed = 0
         while processed < toEvaluate.count {
             if cancelToken.isCancelled { throw InferenceError.cancelled }
-            let chunk = toEvaluate[processed..<min(processed + batchCapacity, toEvaluate.count)]
+            var end = min(processed + batchCapacity, toEvaluate.count)
+            if boundaryOffset > processed && boundaryOffset < end { end = boundaryOffset }
+            let chunk = toEvaluate[processed..<end]
             batch.n_tokens = 0
             for (offset, tok) in chunk.enumerated() {
                 let i = Int(batch.n_tokens)
@@ -521,6 +560,7 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
             }
             processed += chunkCount
             cachedTokens.append(contentsOf: evaluatedSlice)
+            if boundaryOffset > 0 && processed == boundaryOffset { saveCheckpoint(ctx: ctx) }
             emit(.progress(.processingPrompt, Double(processed) / Double(toEvaluate.count)))
         }
         let promptDone = Date()
@@ -529,6 +569,22 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
         let sampling = request.sampling
         let chain = llama_sampler_chain_init(llama_sampler_chain_default_params())!
         defer { llama_sampler_free(chain) }
+        // 模板已经替模型打开了 <think>（开启思考模式时）：输出从思考段里开始
+        let opensThinking = rendered.text.hasSuffix("<think>\n") || rendered.text.hasSuffix("<think>")
+        // 写够长度再收尾：前 minNew 个 token 屏蔽结束符和控制符。放在链的第一位，够数后摘掉。
+        // 思考模式下前面的 token 是思考内容，不做这个限制。
+        let minNew = opensThinking ? 0 : min(max(request.minNewTokens, 0), maxNew - 1)
+        var holdingEnd = false
+        if minNew > 0, !endTokens.isEmpty {
+            let biases = endTokens.map { llama_logit_bias(token: $0, bias: -Float.infinity) }
+            let ban = biases.withUnsafeBufferPointer { buffer in
+                llama_sampler_init_logit_bias(llama_vocab_n_tokens(vocab), Int32(buffer.count), buffer.baseAddress)
+            }
+            if let ban {
+                llama_sampler_chain_add(chain, ban)
+                holdingEnd = true
+            }
+        }
         if sampling.repeatPenalty != 1 || sampling.presencePenalty != 0 || sampling.frequencyPenalty != 0 {
             llama_sampler_chain_add(chain, llama_sampler_init_penalties(
                 llama_vocab_n_tokens(vocab),
@@ -573,8 +629,6 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
         // ---- 逐 token 生成 ----
         emit(.progress(.generating, nil))
         var utf8 = UTF8Accumulator()
-        // 模板已经替模型打开了 <think>（开启思考模式时）：输出从思考段里开始
-        let opensThinking = rendered.text.hasSuffix("<think>\n") || rendered.text.hasSuffix("<think>")
         var filter = StreamingTextFilter(stopSequences: request.stopSequences + rendered.stopSequences,
                                          hideThinking: true, startsInsideThinking: opensThinking)
         var generated = 0
@@ -584,6 +638,10 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
 
         while generated < maxNew {
             if cancelToken.isCancelled { stopReason = "用户停止"; break }
+            if holdingEnd && generated >= minNew {
+                llama_sampler_free(llama_sampler_chain_remove(chain, 0))
+                holdingEnd = false
+            }
             let next = llama_sampler_sample(chain, ctx, -1)
             if firstTokenTime == nil { firstTokenTime = Date() }
             if llama_vocab_is_eog(vocab, next) { stopReason = "自然结束"; break }
@@ -614,8 +672,9 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
             let rest = filter.feed(utf8.flush()) + filter.finish()
             if !rest.isEmpty { emit(.text(rest)) }
         }
-        // 回复生成完也存一个检查点：之后插进来的剧情选项不会让下一轮回复整段重算
-        if needsCheckpoints, request.purpose == .reply, generated > 0 {
+        // 回复生成完也存一个检查点：之后插进来的剧情选项不会让下一轮回复整段重算。
+        // 提示词末尾带着只用一次的指令时，这个位置下一轮用不上（检查点已经存在指令前面了）
+        if needsCheckpoints, request.purpose == .reply, request.stableMessageCount == nil, generated > 0 {
             saveCheckpoint(ctx: ctx)
         }
         if filter.unclosedThinking {

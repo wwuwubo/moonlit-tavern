@@ -26,7 +26,9 @@ public enum ReplySuggestions {
             sampling: s,
             maxNewTokens: 48 * n + 32,
             stopSequences: ["\n\(n + 1).", "\n\(n + 1)．", "\n\(n + 1)、", "\n\n\n"],
-            purpose: .suggestions
+            purpose: .suggestions,
+            // 到刚才那条回复为止都会原样出现在下一轮回复的提示词里
+            stableMessageCount: messages.count - 1
         )
     }
 

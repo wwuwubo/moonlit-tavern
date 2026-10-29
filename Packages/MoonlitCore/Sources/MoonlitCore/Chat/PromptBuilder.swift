@@ -182,6 +182,10 @@ public struct PromptBuilder {
         if let personaGender {
             reminders.append("\(ctx.persona.name)是\(personaGender.noun)，称呼和代词用「\(personaGender.pronoun)」。")
         }
+        if ctx.settings.holdReplyLength {
+            let range = ctx.settings.replyCharacterRange
+            reminders.append("这段写 \(range.lowerBound) 到 \(range.upperBound) 字，动作、神态、对白都写足再收尾。")
+        }
         if !reminders.isEmpty {
             tailMessages.append(PromptMessage(role: .system, content: "（" + reminders.joined() + "）"))
         }

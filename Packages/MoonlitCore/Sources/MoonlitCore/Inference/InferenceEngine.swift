@@ -26,6 +26,12 @@ public struct GenerationRequest: Sendable {
     public var stopSequences: [String]
     /// 用途标记：普通回复、摘要或剧情选项。后两者不作为角色发言显示。
     public var purpose: Purpose
+    /// 至少生成多少 token 才允许模型收尾（本地模型在此之前屏蔽结束符；云端忽略）。
+    public var minNewTokens: Int
+    /// 开头有几条消息在之后的请求里会原样保留（系统设定 + 聊天历史）。
+    /// 后面跟着的是只用这一次的指令（回复前提醒、剧情选项说明）。
+    /// 本地引擎在这几条的结尾处存一个缓存检查点，下一轮从这里接着算。nil 表示全部消息都会保留。
+    public var stableMessageCount: Int?
 
     public enum Purpose: String, Sendable {
         case reply
@@ -39,7 +45,9 @@ public struct GenerationRequest: Sendable {
         sampling: SamplingParams,
         maxNewTokens: Int,
         stopSequences: [String] = [],
-        purpose: Purpose = .reply
+        purpose: Purpose = .reply,
+        minNewTokens: Int = 0,
+        stableMessageCount: Int? = nil
     ) {
         self.messages = messages
         self.prefill = prefill
@@ -47,6 +55,8 @@ public struct GenerationRequest: Sendable {
         self.maxNewTokens = maxNewTokens
         self.stopSequences = stopSequences
         self.purpose = purpose
+        self.minNewTokens = minNewTokens
+        self.stableMessageCount = stableMessageCount
     }
 }
 

@@ -320,7 +320,7 @@ struct InferenceSettingsView: View {
         Form {
             Section {
                 Picker("上下文长度", selection: $state.settings.local.contextLength) {
-                    ForEach([2048, 3072, 4096, 6144, 8192, 12288, 16384, 24576, 32768], id: \.self) { Text("\($0)").tag($0) }
+                    ForEach([2048, 3072, 4096, 6144, 8192, 12288, 16384, 24576, 32768, 49152, 65536], id: \.self) { Text("\($0)").tag($0) }
                 }
                 Picker("KV 缓存精度", selection: $state.settings.local.kvCacheType) {
                     Text("Q8_0（省一半内存）").tag(KVCacheType.q8_0)
@@ -330,7 +330,7 @@ struct InferenceSettingsView: View {
             } header: {
                 Text("上下文与内存")
             } footer: {
-                Text("8GB 内存的 iPad 上，系统通常只允许单个应用使用其中一部分。上下文越长，KV 缓存越大；放不下时会自动降到能放下的长度并提示。Q8_0 KV 缓存需要开启 Flash Attention。")
+                Text("8GB 内存的 iPad 上，系统通常只允许单个应用使用其中一部分。上下文越长，KV 缓存越大；放不下时会自动降到能放下的长度并提示。Qwen3.5 这类混合架构的 KV 缓存很小，4B 模型开到 32768 以上也不算重；但缓存用不上的那一轮要把整段重读，上下文越长，那一轮等得越久。Q8_0 KV 缓存需要开启 Flash Attention。")
             }
 
             Section("提示词模板") {

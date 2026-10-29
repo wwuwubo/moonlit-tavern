@@ -51,7 +51,8 @@ final class PersonaAndContinuationTests: XCTestCase {
 
     func testNoReminderWhenGenderUnknown() {
         let p = plan(persona: UserPersona(name: "旅人", description: "一个迷路的商人"))
-        XCTAssertEqual(p.tailCount, 0)
+        XCTAssertEqual(p.tailCount, 1, "只剩字数提醒")
+        XCTAssertTrue(p.messages.last?.content.contains("这段写") == true)
         XCTAssertFalse(p.messages.contains { $0.content.contains("称呼和代词") })
         XCTAssertFalse(p.messages.first?.content.contains("性别：") == true)
     }
@@ -76,12 +77,58 @@ final class PersonaAndContinuationTests: XCTestCase {
         XCTAssertEqual(withCard.tailCount, 2)
         XCTAssertEqual(withCard.messages.last?.content, "保持艾琳的口吻。", "角色卡的历史后指令仍在最后")
         settings.replyReminder = false
-        XCTAssertEqual(build().tailCount, 1, "关掉后只剩角色卡的指令")
+        XCTAssertEqual(build().tailCount, 2, "关掉后剩字数提醒和角色卡的指令")
+        XCTAssertFalse(build().messages.contains { $0.content.contains("接着旅人最后说的话") })
+        settings.holdReplyLength = false
+        XCTAssertEqual(build().tailCount, 1, "两个都关掉后只剩角色卡的指令")
 
         let afterGreeting = plan(persona: UserPersona(name: "旅人"))
-        XCTAssertEqual(afterGreeting.tailCount, 0, "最后一条是角色的话（开场白、群聊里接话）时不加")
+        XCTAssertFalse(afterGreeting.messages.contains { $0.content.contains("接着旅人最后说的话") },
+                       "最后一条是角色的话（开场白、群聊里接话）时不加「接着往下写」")
         let old = try? JSONDecoder().decode(AppSettings.self, from: Data(#"{"loreTokenBudget": 500}"#.utf8))
         XCTAssertEqual(old?.replyReminder, true)
+    }
+
+    // MARK: - 写够长度
+
+    func testReplyLengthTargetsAndFloor() throws {
+        var settings = AppSettings()
+        XCTAssertEqual(settings.replyLength, .medium)
+        XCTAssertEqual(settings.replyCharacterRange, 300...450)
+        XCTAssertEqual(settings.minNewTokens, 192, "上限 480 的 40%")
+        settings.replyLength = .custom
+        settings.sampling.maxNewTokens = 816
+        XCTAssertEqual(settings.replyCharacterRange, 500...750)
+        XCTAssertEqual(settings.minNewTokens, 326)
+        settings.replyLength = .short
+        XCTAssertEqual(settings.replyCharacterRange, 150...200)
+        settings.replyLength = .long
+        XCTAssertEqual(settings.replyCharacterRange, 600...850)
+        settings.holdReplyLength = false
+        XCTAssertEqual(settings.minNewTokens, 0)
+
+        let old = try JSONDecoder().decode(AppSettings.self, from: Data(#"{"loreTokenBudget": 500}"#.utf8))
+        XCTAssertTrue(old.holdReplyLength, "旧设置文件默认打开")
+        let decoded = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(settings))
+        XCTAssertFalse(decoded.holdReplyLength)
+    }
+
+    func testLengthReminderFollowsSetting() {
+        let user = [ChatMessage(role: .user, speakerName: "旅人", content: "还有空房吗？")]
+        let on = plan(persona: UserPersona(name: "旅人"), history: user)
+        XCTAssertTrue(on.messages.last?.content.contains("这段写 300 到 450 字") == true, on.messages.last?.content ?? "")
+
+        let erin = TavernCharacter(name: "艾琳", description: "老板娘")
+        var chat = ChatSession(title: "t", characterIDs: [erin.id])
+        chat.append(user[0])
+        var settings = AppSettings()
+        settings.holdReplyLength = false
+        let off = PromptBuilder().build(PromptContext(
+            characters: [erin], speaker: erin, persona: UserPersona(name: "旅人"), settings: settings,
+            session: chat, lorebooks: [], memory: nil, contextLength: 4096, maxNewTokens: 200,
+            tokenCounter: HeuristicTokenCounter()))
+        XCTAssertFalse(off.messages.contains { $0.content.contains("这段写") })
+        XCTAssertEqual(off.tailCount, 1, "只剩「接着往下写」")
     }
 
     func testGenderWithoutDescriptionStillWritten() {

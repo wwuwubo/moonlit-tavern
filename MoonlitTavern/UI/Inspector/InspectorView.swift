@@ -444,6 +444,14 @@ private struct ParamsPanel: View {
                 } else {
                     Text("最多 \(state.settings.effectiveMaxNewTokens) token").font(.caption).foregroundStyle(Theme.textTertiary)
                 }
+                Toggle("写够长度再收尾", isOn: $state.settings.holdReplyLength)
+                    .accessibilityIdentifier("holdReplyLengthToggle")
+                let range = state.settings.replyCharacterRange
+                Text(state.settings.holdReplyLength
+                     ? "提醒模型这段写 \(range.lowerBound)～\(range.upperBound) 字，前 \(state.settings.minNewTokens) token 不许收尾。嫌啰嗦就关掉，或者把长度调短。"
+                     : "模型写到哪算哪，常常一两百字就收尾。")
+                    .font(.caption)
+                    .foregroundStyle(Theme.textTertiary)
             }
             SectionCard(title: "采样", subtitle: "温度越高越有创意，也越容易跑题") {
                 slider("温度 Temperature", value: $state.settings.sampling.temperature, range: 0...2, step: 0.05)

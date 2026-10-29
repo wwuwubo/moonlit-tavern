@@ -31,7 +31,7 @@ final class ReplySuggestionTests: XCTestCase {
             tokenCounter: HeuristicTokenCounter()
         )
         let plan = PromptBuilder().build(ctx)
-        XCTAssertEqual(plan.tailCount, 1, "历史后指令算一条末尾指令")
+        XCTAssertEqual(plan.tailCount, 2, "字数提醒和历史后指令都算末尾指令")
         let request = ReplySuggestions.request(plan: plan, userName: "旅人", characterNames: ["艾琳"], count: 3, sampling: SamplingParams())
         let shared = plan.messages.count - plan.tailCount
         XCTAssertEqual(Array(request.messages.prefix(shared)), Array(plan.messages.prefix(shared)),
@@ -41,6 +41,8 @@ final class ReplySuggestionTests: XCTestCase {
         XCTAssertFalse(request.messages.contains { $0.content == "保持简短" }, "历史后指令是给角色的，不放进选项请求")
         XCTAssertEqual(request.prefill, "1. ")
         XCTAssertEqual(request.purpose, .suggestions)
+        XCTAssertEqual(request.stableMessageCount, shared, "说明之前的部分会原样出现在下一轮回复里，引擎在那里存检查点")
+        XCTAssertFalse(request.messages.contains { $0.content.contains("这段写") }, "字数提醒是给回复的")
         XCTAssertTrue(request.stopSequences.contains("\n4."))
     }
 
