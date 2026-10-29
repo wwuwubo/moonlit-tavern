@@ -48,3 +48,31 @@ jobs:
             logs/screenshots/
             logs/simulators.txt
           if-no-files-found: ignore
+
+  ios-preview-build:
+    name: Build tested candidate IPA
+    needs: [core-tests, simulator-import]
+    runs-on: xcode-27
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Fetch llama.cpp iOS binary
+        run: scripts/fetch-llama.sh
+      - name: Generate Xcode project
+        run: xcodegen generate
+      - name: Compile iPadOS app
+        run: scripts/build-ios.sh
+      - name: Package IPA
+        run: scripts/package-ipa.sh
+      - name: Verify IPA structure
+        run: scripts/verify-ipa.sh build/MoonlitTavern-unsigned.ipa
+      - name: Upload candidate only after tests pass
+        uses: actions/upload-artifact@v5
+        with:
+          name: moonlit-tavern-clipboard-import-0.1.1-18
+          path: |
+            build/MoonlitTavern-unsigned.ipa
+            build/MoonlitTavern-unsigned.ipa.sha256
+          if-no-files-found: error
