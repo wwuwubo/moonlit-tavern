@@ -18,7 +18,8 @@ jobs:
       - run: cd Packages/MoonlitCore && swift test
 
   simulator-import:
-    name: iPad simulator JSON paste import
+    name: iPad simulator JSON paste import and candidate build
+    needs: core-tests
     runs-on: xcode-27
     timeout-minutes: 60
     steps:
@@ -35,6 +36,26 @@ jobs:
           MOONLIT_SMOKE_TEST: "1"
           LLAMA_TAG: b11960
         run: scripts/run-simulator-test.sh https://example.com/unused.gguf
+      - name: Fetch production iOS inference framework
+        run: |
+          rm -rf Vendor/llama.xcframework
+          scripts/fetch-llama.sh
+      - name: Regenerate iOS project
+        run: xcodegen generate
+      - name: Compile real iPadOS Release
+        run: scripts/build-ios.sh
+      - name: Package unsigned IPA
+        run: scripts/package-ipa.sh
+      - name: Verify IPA file structure
+        run: scripts/verify-ipa.sh build/MoonlitTavern-unsigned.ipa
+      - name: Upload verified IPA candidate
+        uses: actions/upload-artifact@v5
+        with:
+          name: moonlit-tavern-clipboard-story-0.1.1-18
+          path: |
+            build/MoonlitTavern-unsigned.ipa
+            build/MoonlitTavern-unsigned.ipa.sha256
+          if-no-files-found: error
       - name: Upload diagnostics
         if: always()
         uses: actions/upload-artifact@v5
@@ -46,32 +67,3 @@ jobs:
             logs/simulators.txt
           if-no-files-found: ignore
 
-  ios-preview-build:
-    name: Build tested candidate IPA
-    needs: [core-tests, simulator-import]
-    runs-on: macos-26
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@v5
-      - name: Select Xcode 26.6
-        run: sudo xcode-select -s /Applications/Xcode_26.6.app
-      - name: Install XcodeGen
-        run: brew install xcodegen
-      - name: Fetch llama.cpp iOS binary
-        run: scripts/fetch-llama.sh
-      - name: Generate Xcode project
-        run: xcodegen generate
-      - name: Compile iPadOS app
-        run: scripts/build-ios.sh
-      - name: Package IPA
-        run: scripts/package-ipa.sh
-      - name: Verify IPA structure
-        run: scripts/verify-ipa.sh build/MoonlitTavern-unsigned.ipa
-      - name: Upload candidate only after tests pass
-        uses: actions/upload-artifact@v5
-        with:
-          name: moonlit-tavern-clipboard-import-0.1.1-18
-          path: |
-            build/MoonlitTavern-unsigned.ipa
-            build/MoonlitTavern-unsigned.ipa.sha256
-          if-no-files-found: error
