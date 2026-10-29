@@ -60,7 +60,10 @@ fi
 export TEST_RUNNER_SCREENSHOT_DIR="$ROOT/logs/screenshots"
 TEST_FILTER=()
 if [[ "${MOONLIT_SMOKE_TEST:-0}" == "1" ]]; then
-  TEST_FILTER=("-only-testing:MoonlitTavernUITests/MoonlitTavernUITests/testPasteJSONCharacterCard")
+  TEST_FILTER=(
+    "-only-testing:MoonlitTavernUITests/MoonlitTavernUITests/testPasteJSONCharacterCard"
+    "-only-testing:MoonlitTavernUITests/MoonlitTavernUITests/testActionChoicesPanelAndManualInput"
+  )
 fi
 export TEST_RUNNER_MOONLIT_MAX_TOKENS="${MAX_TOKENS:-48}"
 export TEST_RUNNER_MOONLIT_CONTEXT="${CONTEXT:-2048}"
