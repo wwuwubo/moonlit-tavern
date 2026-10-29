@@ -52,6 +52,10 @@ struct ChatView: View {
                         )
                         .id(message.id)
                     }
+                    if let last = path.last, last.role == .assistant {
+                        actionChoices(for: last)
+                            .id("action-choices")
+                    }
                     if let generation = state.generation, generation.chatID == chatID {
                         StreamingBubble(generation: generation)
                             .id("streaming")
@@ -71,7 +75,65 @@ struct ChatView: View {
             .onChange(of: state.generation?.text.count ?? 0) { _, _ in
                 proxy.scrollTo("bottom", anchor: .bottom)
             }
+            .onChange(of: state.suggestedActions[chatID]?.count ?? 0) { _, _ in
+                proxy.scrollTo("bottom", anchor: .bottom)
+            }
         }
+    }
+
+    @ViewBuilder
+    private func actionChoices(for last: ChatMessage) -> some View {
+        let actions = state.suggestedActionSourceIDs[chatID] == last.id
+            ? (state.suggestedActions[chatID] ?? []) : []
+        let loading = state.actionsLoadingChatID == chatID
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Text("下一步行动").font(.caption.weight(.semibold))
+                if loading {
+                    ProgressView().controlSize(.mini)
+                    Text("生成选项中…").font(.caption2)
+                }
+                Spacer()
+                Button {
+                    state.refreshSuggestedActions(in: chatID)
+                } label: {
+                    Label(actions.isEmpty ? "生成选项" : "换一组", systemImage: "arrow.clockwise")
+                        .font(.caption)
+                }
+                .disabled(state.isGenerating || loading)
+                .accessibilityIdentifier("refreshActionChoices")
+                Button {
+                    composerFocused = true
+                } label: {
+                    Label("自由输入", systemImage: "pencil")
+                        .font(.caption)
+                }
+                .accessibilityIdentifier("manualActionInput")
+            }
+            .foregroundStyle(Theme.textSecondary)
+            ForEach(actions, id: \.self) { option in
+                Button {
+                    state.sendUserMessage(option, in: chatID)
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "arrow.turn.down.right")
+                        Text(option).multilineTextAlignment(.leading)
+                        Spacer(minLength: 4)
+                    }
+                    .font(.subheadline)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 10)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(Theme.surfaceRaised))
+                }
+                .buttonStyle(.plain)
+                .disabled(state.isGenerating)
+                .accessibilityIdentifier("actionChoice")
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: 680, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 12).stroke(Theme.hairline))
+        .accessibilityIdentifier("actionChoicesPanel")
     }
 
     // MARK: - 输入区
