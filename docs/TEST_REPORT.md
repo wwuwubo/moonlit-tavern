@@ -1,8 +1,8 @@
 # 测试报告
 
-版本 0.1.0 · 构建 #17 · 提交 `ad967c5` · 2026 年 10 月 29 日
+版本 0.2.0 · 构建 #22 · 提交 `545d4bf` · 2026 年 10 月 29 日
 
-完整版（含截图、技术调研、里程碑）见 Release 附带的《月下酒馆 交付与测试报告》。
+完整版（含截图、技术调研、里程碑）是单独交付的《月下酒馆 交付与测试报告》。
 
 ## 验收问题
 
@@ -29,25 +29,25 @@
 
 **已完成并验证**。在 GitHub 托管的 macOS 机器上用 xcodebuild 编译 Release、iphoneos、arm64。Xcode 27.1（iOS 27.1 SDK）与 Xcode 26.6（iOS 26.5 SDK）两个版本都编译成功。
 
-证据：Actions 运行 Build #17（编号 40798530354）；`build-logs.zip` 中的 `xcodebuild.log` 以 `** BUILD SUCCEEDED **` 结束，`environment.log` 记录 Xcode 与 SDK 版本。
+证据：Actions 运行 Build #22（编号 40809453501）；`build-logs.zip` 中的 `xcodebuild.log` 以 `** BUILD SUCCEEDED **` 结束，`environment.log` 记录 Xcode 与 SDK 版本。
 
 ### 3. 是否产生了 IPA 或其他可供签名的构建产物？
 
 **已完成并验证**。产出未签名 IPA，结构检查全部通过：真机平台、arm64、内嵌 llama.framework、未签名、无描述文件。能否安装取决于签名，这一步没有测试。
 
-证据：Releases `build-17` 中的 `MoonlitTavern-unsigned.ipa` 及其 `.sha256`；`build-logs.zip` 中的 `verify-ipa.log`。
+证据：Releases `build-22` 中的 `MoonlitTavern-unsigned.ipa` 及其 `.sha256`；`build-logs.zip` 中的 `verify-ipa.log`。
 
 ### 4. 是否可以导入角色卡？
 
-**已完成并验证**。支持 PNG（读取 chara 与 ccv3 文本块）和 JSON，兼容 Character Card V1、V2、V3 以及 TavernAI 的字段别名；角色卡内嵌的世界书一起导入；导出时未知字段原样保留。解析与导出由单元测试验证；App 里的导入流程也在模拟器测试中走通：从「+ › 导入角色卡」打开系统文档选择器，选中「我的 iPad › 月下酒馆」里的 JSON 角色卡，侧栏随即出现新角色。
+**已完成并验证**。支持 PNG（读取 chara 与 ccv3 文本块）和 JSON，兼容 Character Card V1、V2、V3 以及 TavernAI 的字段别名；角色卡内嵌的世界书一起导入；导出时未知字段原样保留。导入页有三种方式：粘贴 JSON 文字、App 内「角色卡」文件夹列表、系统文件选择器。模拟器测试中三种方式都导入成功，App 重启后导入的角色仍在。系统文件选择器在你的 iPad 上出现过卡住和空白，0.2.0 已改为先收起导入页、再用 UIKit 选择器原地打开，真机效果还要你来确认；前两种方式不经过系统选择器。
 
-证据：`MoonlitCore/CharacterCards/CharacterCardCodec.swift`、`PNGChunks.swift`；`CharacterCardTests`（9 项）与 `Tests/MoonlitCoreTests/Fixtures/` 样例文件；模拟器测试日志中的「导入角色卡」几行与截图「13-导入角色卡后」。
+证据：`MoonlitCore/CharacterCards/CharacterCardCodec.swift`、`UI/Editors/CardImportView.swift`；`CharacterCardTests`（9 项）；模拟器测试 `testPasteJSONCharacterCard` 与完整流程中的「文件夹导入」「选择器导入」「第二次重启后」几行（`docs/evidence/simulator-uitest-steps.txt`）。
 
 ### 5. 聊天记录能否在重启后保留？
 
-**已完成并验证（模拟器）**。每个存档保存为独立 JSON 文件，原子写入。模拟器测试中先完成一轮对话，再退出并重新启动 App：用户消息与助手消息数量和重启前一致，最后一条回复的文本完全相同；随后又成功生成了一条新回复。
+**已完成并验证（模拟器）**。每个存档保存为独立 JSON 文件，原子写入。模拟器测试中先完成一轮对话并换过一组剧情选项，再退出并重新启动 App：用户消息与助手消息数量和重启前一致，最后一条回复的文本完全相同，剧情选项也和重启前一致；随后点选项又成功生成了新回复。
 
-证据：`MoonlitCore/Persistence/TavernStore.swift`、`PersistenceTests`；模拟器测试日志 `uitest-steps.txt` 与截图「10-重启后」「11-重启后继续对话」（仓库 `ci-logs/simulator-uitest` 分支）。
+证据：`MoonlitCore/Persistence/TavernStore.swift`、`PersistenceTests`、`ReplySuggestionTests`；模拟器测试日志 `uitest-steps.txt` 中「重启后」一行与截图「10-重启后」（仓库 `ci-logs/simulator-uitest` 分支、`docs/evidence/`）。
 
 ### 6. 是否真正调用本地模型？
 
@@ -81,7 +81,7 @@
 
 ## 单元测试
 
-`Packages/MoonlitCore` 共 71 项，在 Linux（Swift 6.0.3）和 macOS（Swift 6.4）上全部通过。日志：`docs/evidence/core-tests-linux.log`，以及每个 Release 附带的 `core-tests.log`。
+`Packages/MoonlitCore` 共 84 项，在 Linux（Swift 6.0.3）和 macOS（Swift 6.4）上全部通过。日志：每个 Release 附带的 `core-tests.log`、`docs/evidence/core-tests-macos-build22.log`。
 
 | 测试组 | 数量 |
 |---|---|
@@ -89,17 +89,18 @@
 | 世界书引擎 | 13 |
 | 世界书格式 | 4 |
 | 提示词组装与模板 | 14 |
-| 对话树、流式文本、群聊调度、Markdown | 9 |
+| 对话树、流式文本、群聊调度、Markdown（含 7 项防止回复丢失的回归测试） | 16 |
 | 记忆 | 8 |
 | GGUF 解析、内存估算、OpenAI 接口 | 9 |
 | 持久化 | 5 |
+| 剧情选项 | 6 |
 
 ## iOS 构建
 
 | 构建 | 环境 | 结果 |
 |---|---|---|
-| Build #17 | Xcode 27.1 · Swift 6.4 · iOS 27.1 SDK · Release · iphoneos | 成功，IPA 结构检查通过 |
-| Build #17 兼容构建 | Xcode 26.6 · Swift 6.3.3 · iOS 26.5 SDK | 成功，IPA 结构检查通过 |
+| Build #22 | Xcode 27.1 · Swift 6.4 · iOS 27.1 SDK · Release · iphoneos | 成功，IPA 结构检查通过 |
+| Build #22 兼容构建 | Xcode 26.6 · Swift 6.3.3 · iOS 26.5 SDK | 成功，IPA 结构检查通过 |
 
 IPA 检查（`scripts/verify-ipa.sh`）：iphoneos 平台、arm64、最低系统 17.0、仅 iPad；链接并内嵌 `llama.framework`（含 Metal 后端）；主程序引用 48 个 llama.cpp 接口；未签名、无描述文件。
 
@@ -112,23 +113,29 @@ IPA 检查（`scripts/verify-ipa.sh`）：iphoneos 平台、arm64、最低系统
 | Qwen3-0.6B Q8_0 | 8192 | 22/22 | `docs/evidence/engine-qwen3-0.6b-ctx8192.log` |
 | Qwen3.5-0.8B Q4_K_M | 4096 | 22/22 | `docs/evidence/engine-qwen35-0.8b-ctx4096.log` |
 | Qwen3.5-4B Q4_K_M | 8192 | 加载与首轮 5 项通过（手动停止） | `docs/evidence/engine-qwen35-4b-partial.log` |
+| Qwen3.5-0.8B Q4_K_M（0.2.0，含剧情选项） | 4096 | 29/29；选项复用回复上下文 839/964 tok，选项之后的下一轮只计算 26 tok | `docs/evidence/engine-qwen35-0.8b-ctx4096-v0.2.log` |
 
 虚拟机 GPU（Apple Paravirtual device）速度远低于真机，日志中的速度只用来确认功能正确。
 
 ## 模拟器端到端测试
 
-iPad Pro 13 英寸（M5）模拟器，真实 App + 真实模型 Qwen3.5-0.8B Q4_K_M，上下文 2048，回复上限 48 token。运行编号 40798529308，TEST SUCCEEDED。截图在 `docs/evidence/screenshots/`。
+iPad Pro 13 英寸（M5）模拟器，真实 App + 真实模型 Qwen3.5-0.8B Q4_K_M，上下文 2048，回复上限 48 token。两项测试 `testLocalRoleplayEndToEnd`、`testPasteJSONCharacterCard` 是发布前必过环节，运行编号 40809453501，TEST SUCCEEDED。截图在 `docs/evidence/screenshots/`。
 
 | 步骤 | 结果 |
 |---|---|
-| 启动 App | 加载示例数据，聊天界面出现，示例存档含开场白 |
+| 启动 App | 示例数据加载，聊天界面出现 |
 | 设置 › 模型管理 | 识别到测试模型并选中 |
-| 输入并发送「你好，艾琳。今晚还有空房吗？」 | 出现停止按钮，进入生成状态 |
-| 等待回复 | 9.6 秒后收到回复（含首次加载模型）；首 token 2.06 秒，读取 243 token/秒，生成 27.1 token/秒，进程内存 754 MB |
-| 右侧五个面板、角色编辑、群聊存档、竖屏 | 全部正常显示并截图 |
-| 退出 App 再启动 | 用户消息 1/1、助手消息 2/2，最后一条回复文本与重启前完全一致 |
-| 发送「那就要朝钟楼的那间。」 | 6.5 秒后收到新回复（含重新加载模型）；首 token 2.53 秒，生成 50.3 token/秒 |
-| 「+ › 导入角色卡」，在文档选择器里选中 uitest-card.json | 导入成功，顶部提示「已导入「测试旅者」（V2）」，侧栏出现新角色 |
+| 自由输入「你好，艾琳。今晚还有空房吗？」并发送 | 14.2 秒后收到回复（含首次加载模型）；首 token 5.76 秒，读取 87 token/秒，生成 21.6 token/秒，进程内存 794 MB |
+| 等待剧情选项 | 回复下方自动出现 3 个选项 |
+| 点「换一组选项」 | 出现生成提示；新的一组与上一组不同；角色回复的内容和条数都没变 |
+| 右侧五个面板、角色编辑、群聊存档、竖屏 | 正常显示并截图 |
+| 退出 App 再启动 | 消息数量、最后一条回复、剧情选项都与重启前一致 |
+| 点第 1 个选项 | 作为用户消息发出，26.8 秒后收到回复（含重新加载模型），新回复下又出现 3 个选项 |
+| 点「重新生成」 | 出现「2/2」，旧版本保留，消息条数不变 |
+| 导入页 › 从 App 文件夹导入 uitest-card.json | 侧栏出现「测试旅者」 |
+| 导入页 › 从「文件」中选择 › 我的 iPad › 月下酒馆 › 角色卡 › uitest-picker.json | 顶部提示导入成功，侧栏出现「选择器旅者」 |
+| 再次退出重开 | 两个导入的角色都在 |
+| 另一项测试：粘贴 JSON 导入，再重启 | 导入成功，重启后角色仍在 |
 
 模拟器里 `os_proc_available_memory()` 返回 0，速度与内存只说明流程跑通。
 
@@ -139,3 +146,5 @@ iPad Pro 13 英寸（M5）模拟器，真实 App + 真实模型 Qwen3.5-0.8B Q4_
 - 断网条件下的推理（云端测试机必须联网）
 - 云端模式连接真实服务（需要 API Key）
 - App 内下载模型（文件较大，未放进自动化测试）
+- 剧情选项在 4B 主力模型上的质量（测试用 0.8B 小模型）
+- 系统文件选择器在真机上的表现（模拟器正常，真机出过问题）

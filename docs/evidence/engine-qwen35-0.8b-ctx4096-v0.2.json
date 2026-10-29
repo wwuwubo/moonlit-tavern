@@ -1,0 +1,298 @@
+{
+  "architecture" : "qwen35",
+  "checks" : [
+    {
+      "critical" : true,
+      "detail" : "生成 160 tok",
+      "name" : "单人角色扮演：生成成功",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "输出中不含 <think>",
+      "name" : "第一轮：无思考段泄漏",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "输出中不含 <|im_start|>\/<|im_end|>",
+      "name" : "第一轮：无模板符号泄漏",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "没有乱码替换字符",
+      "name" : "第一轮：UTF-8 完整",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "计算 529\/529",
+      "name" : "第一轮：首次计算完整提示词",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "生成 129 tok",
+      "name" : "第二轮：生成成功",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "输出中不含 <think>",
+      "name" : "第二轮：无思考段泄漏",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "输出中不含 <|im_start|>\/<|im_end|>",
+      "name" : "第二轮：无模板符号泄漏",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "没有乱码替换字符",
+      "name" : "第二轮：UTF-8 完整",
+      "passed" : true
+    },
+    {
+      "critical" : false,
+      "detail" : "复用 689\/710 tok，只计算新增的 21 tok",
+      "name" : "第二轮：复用 KV 缓存",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "生成 129 tok",
+      "name" : "重新生成：成功",
+      "passed" : true
+    },
+    {
+      "critical" : false,
+      "detail" : "部分回退成功，只重算 1 tok",
+      "name" : "重新生成：KV 回退",
+      "passed" : true
+    },
+    {
+      "critical" : false,
+      "detail" : "3 个",
+      "name" : "剧情选项：生成并整理出至少 2 个",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "输出中不含 <think>",
+      "name" : "剧情选项：无思考段泄漏",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "输出中不含 <|im_start|>\/<|im_end|>",
+      "name" : "剧情选项：无模板符号泄漏",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "没有乱码替换字符",
+      "name" : "剧情选项：UTF-8 完整",
+      "passed" : true
+    },
+    {
+      "critical" : false,
+      "detail" : "复用 839\/964 tok，计算 125 tok",
+      "name" : "剧情选项：复用回复的上下文缓存",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "生成 120 tok",
+      "name" : "选项之后的下一轮：生成成功",
+      "passed" : true
+    },
+    {
+      "critical" : false,
+      "detail" : "复用 839\/865 tok，计算 26 tok",
+      "name" : "选项之后的下一轮：不整段重算",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "停止原因 用户停止，已生成 6 tok",
+      "name" : "停止生成：及时停止",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "选中 莱恩",
+      "name" : "群聊：被点名的角色发言",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "生成 74 tok",
+      "name" : "群聊：生成成功",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "输出中没有「艾琳：」「旅人：」开头的行",
+      "name" : "群聊：不替其他角色发言",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "输出中不含 <think>",
+      "name" : "群聊：无思考段泄漏",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "输出中不含 <|im_start|>\/<|im_end|>",
+      "name" : "群聊：无模板符号泄漏",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "没有乱码替换字符",
+      "name" : "群聊：UTF-8 完整",
+      "passed" : true
+    },
+    {
+      "critical" : false,
+      "detail" : "摘要 0 字，事件 1 条，关系 0 条，状态 1 项",
+      "name" : "摘要：生成并解析",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "提示词 3581 tok，生成 31 tok，首 token 650.88 秒",
+      "name" : "长上下文：4096 上下文跑通",
+      "passed" : true
+    },
+    {
+      "critical" : true,
+      "detail" : "卸载后引擎状态为空",
+      "name" : "卸载模型",
+      "passed" : true
+    }
+  ],
+  "contextLength" : 4096,
+  "footprintAfterLoadMB" : 664.64453125,
+  "format" : "chatml",
+  "gpuOffload" : true,
+  "host" : "Apple M1 (Virtual)",
+  "loadSeconds" : 2.79340398311615,
+  "model" : "Qwen3.5-0.8B-Q4_K_M.gguf",
+  "os" : "macOS 27.0.1",
+  "physicalMemoryGB" : 7,
+  "runs" : [
+    {
+      "evaluated" : 529,
+      "footprintMB" : 793.06689453125,
+      "genTPS" : 2.295488972269427,
+      "generated" : 160,
+      "name" : "单人角色扮演 · 第一轮",
+      "promptTPS" : 5.006050222624131,
+      "promptTokens" : 529,
+      "stopReason" : "长度上限",
+      "text" : "*她放下酒杯，指尖在银灰色的短发上轻轻敲了个响。* 钟楼的钟声已经敲了三下，大概该停摆的时候到了吧？*\n\n*她站起身，走到窗边，伸手推了推那扇挂着“月亮”二字磨砂玻璃的门。* 不过... 这扇门要是开了，今晚的月光就太暗了。* 毕竟，魔物最怕光，尤其是那三百年没来过的、带着微弱余温的月。*\n\n*她眯起眼睛，眼神像看猎物一样盯着你。* 既然你求了，那就别怪我不客气。但这钱，得按“月光”算。别想省这口气——*她嘴角勾起一抹玩味的笑* 除非你想让",
+      "ttft" : 105.67482805252075
+    },
+    {
+      "evaluated" : 21,
+      "footprintMB" : 831.8169555664062,
+      "genTPS" : 2.3500493193527987,
+      "generated" : 129,
+      "name" : "单人角色扮演 · 第二轮",
+      "promptTPS" : 5.082932958409031,
+      "promptTokens" : 710,
+      "stopReason" : "自然结束",
+      "text" : "*她把手插在兜里，把下巴凑近了些。*\n\n*那声音……\"咚、咚、咚\"，倒是挺好听。* 可是，若是真到了十三声，那地下的封印就得松动了。* 到时候，或许会听见有人从黑暗中踹开门，或是有人在低语。* 你怕不怕？*\n\n*她微微挑眉，语气里带着一丝不易察觉的戏谑。* 反正，今晚的月光太盛，连风铃都懒得动，说不定能吓跑那些不知天高地厚的家伙。* 说吧，你想躲什么？",
+      "ttft" : 4.132454991340637
+    },
+    {
+      "evaluated" : 1,
+      "footprintMB" : 831.8325805664062,
+      "genTPS" : 2.6173341268333834,
+      "generated" : 129,
+      "name" : "重新生成（同一提示词）",
+      "promptTPS" : 2.3259060200221926,
+      "promptTokens" : 710,
+      "stopReason" : "自然结束",
+      "text" : "*她把手插在兜里，把下巴凑近了些。*\n\n*那声音……\"咚、咚、咚\"，倒是挺好听。* 可是，若是真到了十三声，那地下的封印就得松动了。* 到时候，或许会听见有人从黑暗中踹开门，或是有人在低语。* 你怕不怕？*\n\n*她微微挑眉，语气里带着一丝不易察觉的戏谑。* 反正，今晚的月光太盛，连风铃都懒得动，说不定能吓跑那些不知天高地厚的家伙。* 说吧，你想躲什么？",
+      "ttft" : 0.43094801902770996
+    },
+    {
+      "evaluated" : 125,
+      "footprintMB" : 831.8794555664062,
+      "genTPS" : 1.9947611929326516,
+      "generated" : 42,
+      "name" : "剧情选项",
+      "promptTPS" : 5.923333777810077,
+      "promptTokens" : 964,
+      "stopReason" : "自然结束",
+      "text" : "推门，顺手关上窗，示意外面安静。\n2. 转身走到吧台边，把手伸进杯底。\n3. 看着那盏空了一半的灯油，低声叹气。",
+      "ttft" : 21.103883028030396
+    },
+    {
+      "evaluated" : 26,
+      "footprintMB" : 832.1607055664062,
+      "genTPS" : 2.5613415685664807,
+      "generated" : 120,
+      "name" : "选了选项之后的下一轮",
+      "promptTPS" : 5.24950282829176,
+      "promptTokens" : 865,
+      "stopReason" : "长度上限",
+      "text" : "*她并没有真的推开，只是轻轻推开了那扇挂满阴影的门，动作干脆利落。*\n\n*她没说话，只是走到柜台前，指着里面那扇通往钟楼的窗户，眼神像在看什么可疑的东西。*\n\n*“门是推开的，可屋里，除了炉火和那半杯热麦酒，就没什么人了。”*\n\n*她故意停顿了一下，语气变得严肃起来。* “除非你是在找什么——比如，想找个理由在满月那晚不睡觉。或者，你知道为什么镇上的人，连个鬼都不",
+      "ttft" : 4.953670978546143
+    },
+    {
+      "evaluated" : 710,
+      "footprintMB" : 832.0982055664062,
+      "genTPS" : 2.8576966470090297,
+      "generated" : 6,
+      "name" : "停止生成（收到 6 段后取消）",
+      "promptTPS" : 6.167440072635213,
+      "promptTokens" : 710,
+      "stopReason" : "用户停止",
+      "text" : "*她把手插在兜里",
+      "ttft" : 115.1224730014801
+    },
+    {
+      "evaluated" : 693,
+      "footprintMB" : 832.0825805664062,
+      "genTPS" : 1.97490356765055,
+      "generated" : 74,
+      "name" : "群聊 · 莱恩发言",
+      "promptTPS" : 6.181911550529077,
+      "promptTokens" : 693,
+      "stopReason" : "自然结束",
+      "text" : "*他低头看了一眼腰间那把未磨亮的剑，然后抬起头看向酒馆角落。* 嗯……不是。\n\n*他伸出手指轻轻抚摸着剑柄，动作很慢，像是在审视一件被遗忘的物件。* 每年满月前，我会路过这里。那时候，镇子太安静了。月光很亮，魔物也不乱跑。",
+      "ttft" : 112.10212707519531
+    },
+    {
+      "evaluated" : 493,
+      "footprintMB" : 832.1607055664062,
+      "genTPS" : 2.2605913058223015,
+      "generated" : 95,
+      "name" : "记忆摘要",
+      "promptTPS" : 5.487793481613991,
+      "promptTokens" : 493,
+      "stopReason" : "自然结束",
+      "text" : "摘要：艾琳在雨夜收留了旅人，两人谈及北方战事与月光租金，旅人询问钟楼晚间动静。\n事件：\n- 旅人交出了一封密信\n- 艾琳放下酒杯，指尖轻敲银灰色短发\n- 地点=城门口\n关系：\n- 艾琳→旅人：从戒备转为信任\n状态：\n- 地点=城门口\n- 时间=午夜",
+      "ttft" : 89.8377571105957
+    },
+    {
+      "evaluated" : 3581,
+      "footprintMB" : 832.9575805664062,
+      "genTPS" : 2.7392873736261247,
+      "generated" : 31,
+      "name" : "长上下文（接近 4096 tok）",
+      "promptTPS" : 5.501802328596348,
+      "promptTokens" : 3581,
+      "stopReason" : "自然结束",
+      "text" : "这是一段描写酒馆夜晚、骑士与旅人互动的连续记录，展现了月光、账本、风铃与炉火交织的静谧氛围。",
+      "ttft" : 650.8817330598831
+    }
+  ]
+}

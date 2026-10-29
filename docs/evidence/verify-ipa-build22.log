@@ -1,21 +1,21 @@
 ✅ Payload/MoonlitTavern.app 存在
 == 顶层文件 ==
-total 11040
-drwxr-xr-x  9 runner  staff      288 Oct 29 01:09 .
-drwxr-xr-x  3 runner  staff       96 Oct 29 01:09 ..
--rw-r--r--  1 runner  staff    15652 Oct 29 01:09 AppIcon60x60@2x.png
--rw-r--r--  1 runner  staff    21448 Oct 29 01:09 AppIcon76x76@2x~ipad.png
--rw-r--r--  1 runner  staff   208552 Oct 29 01:09 Assets.car
-drwxr-xr-x  3 runner  staff       96 Oct 29 01:09 Frameworks
--rw-r--r--  1 runner  staff     1767 Oct 29 01:09 Info.plist
--rwxr-xr-x  1 runner  staff  5394216 Oct 29 01:09 MoonlitTavern
--rw-r--r--  1 runner  staff        8 Oct 29 01:09 PkgInfo
+total 11832
+drwxr-xr-x  9 runner  staff      288 Oct 29 02:59 .
+drwxr-xr-x  3 runner  staff       96 Oct 29 02:59 ..
+-rw-r--r--  1 runner  staff    15652 Oct 29 02:59 AppIcon60x60@2x.png
+-rw-r--r--  1 runner  staff    21448 Oct 29 02:59 AppIcon76x76@2x~ipad.png
+-rw-r--r--  1 runner  staff   208552 Oct 29 02:59 Assets.car
+drwxr-xr-x  3 runner  staff       96 Oct 29 02:59 Frameworks
+-rw-r--r--  1 runner  staff     1768 Oct 29 02:59 Info.plist
+-rwxr-xr-x  1 runner  staff  5798232 Oct 29 02:59 MoonlitTavern
+-rw-r--r--  1 runner  staff        8 Oct 29 02:59 PkgInfo
 ✅ Info.plist 存在
 == Info.plist 关键字段 ==
 CFBundleIdentifier           com.wuwuyou.moonlittavern 
 CFBundleExecutable           MoonlitTavern 
-CFBundleShortVersionString   0.1.0 
-CFBundleVersion              1 
+CFBundleShortVersionString   0.2.0 
+CFBundleVersion              22 
 MinimumOSVersion             17.0 
 DTPlatformName               iphoneos 
 DTSDKName                    iphoneos27.1 
@@ -127,5 +127,5 @@ Payload/MoonlitTavern.app: code object is not signed at all
 == 资源 ==
 ✅ Assets.car 存在（图标与配色）
  17M	Payload/MoonlitTavern.app
-4.9M	build/MoonlitTavern-unsigned.ipa
+5.0M	build/MoonlitTavern-unsigned.ipa
 IPA 结构检查全部通过

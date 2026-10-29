@@ -1,0 +1,161 @@
+ggml_metal_device_init: tensor API disabled for pre-M5 and pre-A19 devices
+ggml_metal_library_init: using embedded metal library
+ggml_metal_library_compile_all: compiled 'fa_aux' library in 3.008 sec
+ggml_metal_library_compile_all: compiled 'fa_f16' library in 20.324 sec
+ggml_metal_library_compile_all: compiled 'fa_f32' library in 19.477 sec
+ggml_metal_library_compile_all: compiled 'fa_q4_0' library in 2.864 sec
+ggml_metal_library_compile_all: compiled 'fa_q4_1' library in 4.290 sec
+ggml_metal_library_compile_all: compiled 'fa_q5_0' library in 2.779 sec
+ggml_metal_library_compile_all: compiled 'fa_q5_1' library in 4.453 sec
+ggml_metal_library_compile_all: compiled 'fa_q8_0' library in 16.182 sec
+ggml_metal_library_compile_all: compiled 'fa_tensor' library in 3.010 sec
+ggml_metal_library_compile_all: compiled 'fa_vec_f16' library in 16.181 sec
+ggml_metal_library_compile_all: compiled 'fa_vec_f32' library in 13.944 sec
+ggml_metal_library_compile_all: compiled 'fa_vec_q4_0' library in 13.382 sec
+ggml_metal_library_compile_all: compiled 'fa_vec_q4_1' library in 19.106 sec
+ggml_metal_library_compile_all: compiled 'fa_vec_q5_0' library in 10.647 sec
+ggml_metal_library_compile_all: compiled 'fa_vec_q5_1' library in 13.476 sec
+ggml_metal_library_compile_all: compiled 'fa_vec_q8_0' library in 10.308 sec
+ggml_metal_library_compile_all: compiled 'mul_mv' library in 6.421 sec
+ggml_metal_library_compile_all: compiled 'mul_mv_mma' library in 6.947 sec
+ggml_metal_library_compile_all: compiled 'mul_mm' library in 18.130 sec
+ggml_metal_library_compile_all: compiled 'quantize' library in 16.158 sec
+ggml_metal_library_compile_all: compiled 'softmax' library in 19.090 sec
+ggml_metal_library_compile_all: compiled 'norm' library in 18.214 sec
+ggml_metal_library_compile_all: compiled 'unary' library in 3.085 sec
+ggml_metal_library_compile_all: compiled 'binbcast' library in 19.444 sec
+ggml_metal_library_compile_all: compiled 'reduce' library in 19.115 sec
+ggml_metal_library_compile_all: compiled 'tri' library in 19.444 sec
+ggml_metal_library_compile_all: compiled 'ssm' library in 4.644 sec
+ggml_metal_library_compile_all: compiled 'wkv' library in 4.635 sec
+ggml_metal_library_compile_all: compiled 'gated_delta_net' library in 4.684 sec
+ggml_metal_library_compile_all: compiled 'solve_tri' library in 4.573 sec
+ggml_metal_library_compile_all: compiled 'rope' library in 4.604 sec
+ggml_metal_library_compile_all: compiled 'conv' library in 4.302 sec
+ggml_metal_library_compile_all: compiled 'upscale' library in 4.498 sec
+ggml_metal_library_compile_all: compiled 'argsort' library in 4.465 sec
+ggml_metal_library_compile_all: compiled 'pool' library in 4.332 sec
+ggml_metal_library_compile_all: compiled 'misc' library in 4.439 sec
+ggml_metal_library_compile_all: loaded 36 libraries from embedded data in 20.324 sec (max single = 20.324 sec)
+ggml_metal_rsets_init: creating a residency set collection (keep_alive = 180 s)
+ggml_metal_device_init: GPU name:   MTL0 (Apple Paravirtual device)
+ggml_metal_device_init: GPU family: MTLGPUFamilyApple5  (1005)
+ggml_metal_device_init: simdgroup reduction   = false
+ggml_metal_device_init: simdgroup matrix mul. = false
+ggml_metal_device_init: has unified memory    = true
+ggml_metal_device_init: has bfloat            = false
+ggml_metal_device_init: has tensor            = false
+ggml_metal_device_init: use residency sets    = true
+ggml_metal_device_init: use shared buffers    = true
+ggml_metal_device_init: recommendedMaxWorkingSetSize  =  5010.80 MB
+== 加载模型 Qwen3.5-0.8B-Q4_K_M.gguf ==
+模型：qwen35 0.8B Q4_K - Medium，架构 qwen35，参数 0.75B
+上下文 4096（训练 262144），模板 chatml，思考模式 支持
+GPU：Metal，加载耗时 2.79 秒，进程内存 665 MB
+
+提示词组装：系统 275 tok，世界书 57 tok（激活 世界观：长夜、地点：钟楼），历史 84 tok
+
+== 单人角色扮演 · 第一轮 ==
+*她放下酒杯，指尖在银灰色的短发上轻轻敲了个响。* 钟楼的钟声已经敲了三下，大概该停摆的时候到了吧？*
+
+*她站起身，走到窗边，伸手推了推那扇挂着“月亮”二字磨砂玻璃的门。* 不过... 这扇门要是开了，今晚的月光就太暗了。* 毕竟，魔物最怕光，尤其是那三百年没来过的、带着微弱余温的月。*
+
+*她眯起眼睛，眼神像看猎物一样盯着你。* 既然你求了，那就别怪我不客气。但这钱，得按“月光”算。别想省这口气——*她嘴角勾起一抹玩味的笑* 除非你想让
+提示词 529 tok（实际计算 529），生成 160 tok，首 token 105.67 秒，读取 5.0 tok/s，生成 2.3 tok/s，停止原因：长度上限，进程内存 793 MB
+✅ 单人角色扮演：生成成功：生成 160 tok
+✅ 第一轮：无思考段泄漏：输出中不含 <think>
+✅ 第一轮：无模板符号泄漏：输出中不含 <|im_start|>/<|im_end|>
+✅ 第一轮：UTF-8 完整：没有乱码替换字符
+✅ 第一轮：首次计算完整提示词：计算 529/529
+
+== 单人角色扮演 · 第二轮 ==
+*她把手插在兜里，把下巴凑近了些。*
+
+*那声音……"咚、咚、咚"，倒是挺好听。* 可是，若是真到了十三声，那地下的封印就得松动了。* 到时候，或许会听见有人从黑暗中踹开门，或是有人在低语。* 你怕不怕？*
+
+*她微微挑眉，语气里带着一丝不易察觉的戏谑。* 反正，今晚的月光太盛，连风铃都懒得动，说不定能吓跑那些不知天高地厚的家伙。* 说吧，你想躲什么？
+提示词 710 tok（实际计算 21），生成 129 tok，首 token 4.13 秒，读取 5.1 tok/s，生成 2.4 tok/s，停止原因：自然结束，进程内存 832 MB
+✅ 第二轮：生成成功：生成 129 tok
+✅ 第二轮：无思考段泄漏：输出中不含 <think>
+✅ 第二轮：无模板符号泄漏：输出中不含 <|im_start|>/<|im_end|>
+✅ 第二轮：UTF-8 完整：没有乱码替换字符
+✅ 第二轮：复用 KV 缓存：复用 689/710 tok，只计算新增的 21 tok
+
+== 重新生成（同一提示词） ==
+*她把手插在兜里，把下巴凑近了些。*
+
+*那声音……"咚、咚、咚"，倒是挺好听。* 可是，若是真到了十三声，那地下的封印就得松动了。* 到时候，或许会听见有人从黑暗中踹开门，或是有人在低语。* 你怕不怕？*
+
+*她微微挑眉，语气里带着一丝不易察觉的戏谑。* 反正，今晚的月光太盛，连风铃都懒得动，说不定能吓跑那些不知天高地厚的家伙。* 说吧，你想躲什么？
+提示词 710 tok（实际计算 1），生成 129 tok，首 token 0.43 秒，读取 2.3 tok/s，生成 2.6 tok/s，停止原因：自然结束，进程内存 832 MB
+✅ 重新生成：成功：生成 129 tok
+✅ 重新生成：KV 回退：部分回退成功，只重算 1 tok
+
+== 剧情选项 ==
+推门，顺手关上窗，示意外面安静。
+2. 转身走到吧台边，把手伸进杯底。
+3. 看着那盏空了一半的灯油，低声叹气。
+提示词 964 tok（实际计算 125），生成 42 tok，首 token 21.10 秒，读取 5.9 tok/s，生成 2.0 tok/s，停止原因：自然结束，进程内存 832 MB
+整理出的选项：「推门，顺手关上窗，示意外面安静。」 「转身走到吧台边，把手伸进杯底。」 「看着那盏空了一半的灯油，低声叹气。」
+✅ 剧情选项：生成并整理出至少 2 个：3 个
+✅ 剧情选项：无思考段泄漏：输出中不含 <think>
+✅ 剧情选项：无模板符号泄漏：输出中不含 <|im_start|>/<|im_end|>
+✅ 剧情选项：UTF-8 完整：没有乱码替换字符
+✅ 剧情选项：复用回复的上下文缓存：复用 839/964 tok，计算 125 tok
+
+== 选了选项之后的下一轮 ==
+*她并没有真的推开，只是轻轻推开了那扇挂满阴影的门，动作干脆利落。*
+
+*她没说话，只是走到柜台前，指着里面那扇通往钟楼的窗户，眼神像在看什么可疑的东西。*
+
+*“门是推开的，可屋里，除了炉火和那半杯热麦酒，就没什么人了。”*
+
+*她故意停顿了一下，语气变得严肃起来。* “除非你是在找什么——比如，想找个理由在满月那晚不睡觉。或者，你知道为什么镇上的人，连个鬼都不
+提示词 865 tok（实际计算 26），生成 120 tok，首 token 4.95 秒，读取 5.2 tok/s，生成 2.6 tok/s，停止原因：长度上限，进程内存 832 MB
+✅ 选项之后的下一轮：生成成功：生成 120 tok
+✅ 选项之后的下一轮：不整段重算：复用 839/865 tok，计算 26 tok
+
+== 停止生成（收到 6 段后取消） ==
+*她把手插在兜里
+提示词 710 tok（实际计算 710），生成 6 tok，首 token 115.12 秒，读取 6.2 tok/s，生成 2.9 tok/s，停止原因：用户停止，进程内存 832 MB
+✅ 停止生成：及时停止：停止原因 用户停止，已生成 6 tok
+✅ 群聊：被点名的角色发言：选中 莱恩
+
+== 群聊 · 莱恩发言 ==
+*他低头看了一眼腰间那把未磨亮的剑，然后抬起头看向酒馆角落。* 嗯……不是。
+
+*他伸出手指轻轻抚摸着剑柄，动作很慢，像是在审视一件被遗忘的物件。* 每年满月前，我会路过这里。那时候，镇子太安静了。月光很亮，魔物也不乱跑。
+提示词 693 tok（实际计算 693），生成 74 tok，首 token 112.10 秒，读取 6.2 tok/s，生成 2.0 tok/s，停止原因：自然结束，进程内存 832 MB
+✅ 群聊：生成成功：生成 74 tok
+✅ 群聊：不替其他角色发言：输出中没有「艾琳：」「旅人：」开头的行
+✅ 群聊：无思考段泄漏：输出中不含 <think>
+✅ 群聊：无模板符号泄漏：输出中不含 <|im_start|>/<|im_end|>
+✅ 群聊：UTF-8 完整：没有乱码替换字符
+
+== 记忆摘要 ==
+摘要：艾琳在雨夜收留了旅人，两人谈及北方战事与月光租金，旅人询问钟楼晚间动静。
+事件：
+- 旅人交出了一封密信
+- 艾琳放下酒杯，指尖轻敲银灰色短发
+- 地点=城门口
+关系：
+- 艾琳→旅人：从戒备转为信任
+状态：
+- 地点=城门口
+- 时间=午夜
+提示词 493 tok（实际计算 493），生成 95 tok，首 token 89.84 秒，读取 5.5 tok/s，生成 2.3 tok/s，停止原因：自然结束，进程内存 832 MB
+✅ 摘要：生成并解析：摘要 0 字，事件 1 条，关系 0 条，状态 1 项
+
+== 长上下文（接近 4096 tok） ==
+这是一段描写酒馆夜晚、骑士与旅人互动的连续记录，展现了月光、账本、风铃与炉火交织的静谧氛围。
+提示词 3581 tok（实际计算 3581），生成 31 tok，首 token 650.88 秒，读取 5.5 tok/s，生成 2.7 tok/s，停止原因：自然结束，进程内存 833 MB
+✅ 长上下文：4096 上下文跑通：提示词 3581 tok，生成 31 tok，首 token 650.88 秒
+✅ 卸载模型：卸载后引擎状态为空
+
+== 汇总 ==
+检查 29 项，通过 29 项，关键项失败 0 项
+引擎日志：
+  [02:28:19] 开始加载 Qwen3.5-0.8B-Q4_K_M.gguf，上下文 4096，KV q8_0
+  [02:28:22] 加载完成：qwen35 0.8B Q4_K - Medium，2.8 秒，进程内存 665 MB
+  [02:30:07] 状态检查点每个约 19.3 MB，最多保留 3 个
+  [02:52:21] 模型已卸载
