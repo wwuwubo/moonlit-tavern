@@ -1,0 +1,4 @@
+run: 9 (40863785501)
+sha: 342cadfdcb088ef7ccfd63b6b301c527caf5b6d8
+label: simulator-uitest-uitest/no-stream-ui
+date: 2026-10-29T11:30:32Z

@@ -1,0 +1,3 @@
+** TEST SUCCEEDED **
+Test Case '-[MoonlitTavernUITests.MoonlitTavernUITests testLocalRoleplayEndToEnd]' passed (405.792 seconds).
+Test Case '-[MoonlitTavernUITests.MoonlitTavernUITests testPasteJSONCharacterCard]' passed (41.327 seconds).
