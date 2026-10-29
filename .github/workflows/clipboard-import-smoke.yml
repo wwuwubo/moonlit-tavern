@@ -8,10 +8,14 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: clipboard-fix-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   core-tests:
     name: Character card parser unit tests
-    runs-on: xcode-27
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
