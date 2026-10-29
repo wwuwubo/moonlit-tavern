@@ -78,6 +78,7 @@
 
 - 每次回复完整保存后，用同一个模型生成 3 个（可设 2–4 个）用户下一步的选择，存在这条回复上（`ChatMessage.suggestions`），重启后还在
 - 请求沿用回复的提示词（系统设定 + 聊天历史到这条回复为止），去掉历史后指令，末尾追加一条说明，预填「1. 」；本地模型因此能复用已经算好的上下文
+- 整理出的选项少于 2 个时（小模型偶尔跑题、重复或写成角色的话），自动再生成一次，两次结果合并去重
 - 点选项即作为用户消息发出；笔形按钮先填进输入框；「换一组」只替换选项，不改回复；改写回复会清空它的选项
 - 用户开始发送、重新生成、停止或收到内存警告时，正在生成的选项立即取消
 - 代码：`MoonlitCore/Chat/ReplySuggestions.swift`、`App/AppState+Suggestions.swift`
@@ -91,6 +92,21 @@
 - 清理后为空但原文有内容：改存只去掉标签的原文
 - 每次回复在「诊断日志」写一行「回复定稿」：显示字数、清理后字数、停止原因、是否保存；命中停止词、隐藏思考段时另有记录
 - 代码：`MoonlitCore/Chat/StreamingText.swift`（`StreamingTextFilter`、`ReplyFinalizer`）、`App/AppState+Generation.swift`
+
+## 导入文件的几条路
+
+系统文件选择器在部分重签名的设备上会失灵（弹出后只回「已取消」），所以角色卡和世界书准备了几条互不依赖的路：
+
+| 方式 | 机制 | 代码 |
+|---|---|---|
+| 粘贴 JSON / 读取剪贴板 | 直接解析文字或剪贴板里的 PNG 数据 | `UI/Editors/CardImportView.swift` |
+| 「角色卡」文件夹 | 用户在「文件」里把卡放进 `Documents/角色卡`，App 列出后直接读 | `AppState.cardFolderFiles()` |
+| 共享 › 月下酒馆 | Info.plist 声明 JSON、PNG（Alternate）和 GGUF（Owner）文档类型，系统把文件交给 `onOpenURL` | `AppState.importOpenedFile(_:source:)` |
+| 拖入 | iPad 分屏时从「文件」拖进来，`NSItemProvider` 读数据 | `AppState.importDropped(_:)` |
+| 系统选择器 | UIKit `UIDocumentPickerViewController`（原地打开） | `UI/Support/DocumentPicker.swift` |
+| 备用选择器 | SwiftUI `fileImporter`，单选，挂在根视图上 | `App/MoonlitTavernApp.swift` |
+
+所有方式最后都进入 `importCardOrLorebook(data:fileName:)`：先按角色卡解析，不是角色卡的 JSON 再按世界书解析。GGUF 交给模型库复制到 `Documents/Models`。每一步都写诊断日志（弹出、选中、取消、读取失败、导入结果）。
 
 ## KV 缓存复用与回退
 

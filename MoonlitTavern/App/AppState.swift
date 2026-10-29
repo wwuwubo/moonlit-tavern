@@ -34,6 +34,10 @@ struct GenerationState: Equatable {
     var text: String = ""
     var startedAt = Date()
     var regeneratingMessageID: UUID?
+    /// 正在「继续」的回复：界面把它和流式文本合成一条显示
+    var continuingMessageID: UUID?
+    /// 继续之前已经写好的部分
+    var baseText: String = ""
 }
 
 /// 最近一次组装提示词的快照，用于右侧面板显示「上下文用量」「本轮激活的世界书」。

@@ -146,9 +146,40 @@ public struct TavernCharacter: Codable, Identifiable, Hashable, Sendable {
 public struct UserPersona: Codable, Hashable, Sendable {
     public var name: String
     public var description: String
+    /// 用户手动指定的性别；为空时按身份描述判断（见 effectiveGender）。
+    public var gender: PersonaGender?
 
-    public init(name: String = "旅人", description: String = "") {
+    public init(name: String = "旅人", description: String = "", gender: PersonaGender? = nil) {
         self.name = name
         self.description = description
+        self.gender = gender
+    }
+
+    /// 实际使用的性别：手动指定优先，否则从描述里判断，判断不出为空。
+    public var effectiveGender: PersonaGender? {
+        gender ?? PersonaGender.detect(in: description)
+    }
+}
+
+public enum PersonaGender: String, Codable, CaseIterable, Sendable {
+    case male, female
+
+    public var label: String { self == .male ? "男" : "女" }
+    public var noun: String { self == .male ? "男性" : "女性" }
+    public var pronoun: String { self == .male ? "他" : "她" }
+
+    // 「男人」「女人」不算：常出现在「喜欢成熟的男人」这类描述偏好的句子里
+    private static let maleWords = ["男性", "男生", "男孩", "男子", "少年", "男青年"]
+    private static let femaleWords = ["女性", "女生", "女孩", "女子", "少女", "女青年"]
+
+    /// 从身份描述里判断性别。只认明确的词（男性、女生、少年、少女等），两边都出现或都没出现时返回空，
+    /// 避免把「有男朋友」之类的描述误判。判断结果显示在身份设置里，用户可以手动改。
+    public static func detect(in text: String) -> PersonaGender? {
+        let lower = text.lowercased()
+        let english = lower.replacingOccurrences(of: "female", with: " ")
+        let male = maleWords.contains { text.contains($0) } || english.range(of: #"\bmale\b"#, options: .regularExpression) != nil
+        let female = femaleWords.contains { text.contains($0) } || lower.range(of: #"\bfemale\b"#, options: .regularExpression) != nil
+        if male == female { return nil }
+        return male ? .male : .female
     }
 }

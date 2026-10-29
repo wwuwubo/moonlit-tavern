@@ -90,6 +90,16 @@ public extension ChatSession {
         updatedAt = Date()
     }
 
+    /// 「继续」写完一条回复：正文换成续写后的全文，统计换成续写这一次的，旧选项作废。
+    /// 不算用户编辑，不产生新版本。
+    mutating func continueMessage(_ id: UUID, content: String, stats: GenerationStats?) {
+        guard let idx = messages.firstIndex(where: { $0.id == id }) else { return }
+        messages[idx].content = content
+        if let stats { messages[idx].stats = stats }
+        messages[idx].suggestions = nil
+        updatedAt = Date()
+    }
+
     /// 写入（或清空）某条回复后的剧情选项。只改选项，不动回复正文和当前分支。
     mutating func setSuggestions(_ options: [String]?, for id: UUID) {
         guard let idx = messages.firstIndex(where: { $0.id == id }) else { return }

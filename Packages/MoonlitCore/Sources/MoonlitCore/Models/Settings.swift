@@ -14,6 +14,11 @@ public struct SamplingParams: Codable, Hashable, Sendable {
     public var maxNewTokens: Int
     /// 为空表示每次随机。
     public var seed: UInt32?
+    /// DRY 防重复：模型要接着复述上下文里已经出现过的一段话时，复述得越长罚得越重。0 表示关闭。
+    public var dryMultiplier: Double
+    public var dryBase: Double
+    /// 重复多少个 token 以内不罚（常用词组、人名不受影响）
+    public var dryAllowedLength: Int
 
     public init(
         temperature: Double = 0.8,
@@ -25,7 +30,10 @@ public struct SamplingParams: Codable, Hashable, Sendable {
         presencePenalty: Double = 0.0,
         frequencyPenalty: Double = 0.0,
         maxNewTokens: Int = 400,
-        seed: UInt32? = nil
+        seed: UInt32? = nil,
+        dryMultiplier: Double = 0.8,
+        dryBase: Double = 1.75,
+        dryAllowedLength: Int = 3
     ) {
         self.temperature = temperature
         self.topP = topP
@@ -37,12 +45,15 @@ public struct SamplingParams: Codable, Hashable, Sendable {
         self.frequencyPenalty = frequencyPenalty
         self.maxNewTokens = maxNewTokens
         self.seed = seed
+        self.dryMultiplier = dryMultiplier
+        self.dryBase = dryBase
+        self.dryAllowedLength = dryAllowedLength
     }
 
-    /// 写摘要时用的保守参数。
+    /// 写摘要时用的保守参数（摘要需要照抄人名和原话，不开 DRY）。
     public static let summarization = SamplingParams(
         temperature: 0.3, topP: 0.9, topK: 40, minP: 0.05,
-        repeatPenalty: 1.05, repeatLastN: 128, maxNewTokens: 360
+        repeatPenalty: 1.05, repeatLastN: 128, maxNewTokens: 360, dryMultiplier: 0
     )
 }
 
@@ -70,9 +81,9 @@ public enum ReplyLength: String, Codable, CaseIterable, Sendable {
 
     public var tokens: Int? {
         switch self {
-        case .short: return 160
-        case .medium: return 320
-        case .long: return 640
+        case .short: return 240
+        case .medium: return 480
+        case .long: return 960
         case .custom: return nil
         }
     }
@@ -107,7 +118,7 @@ public struct LocalModelSettings: Codable, Hashable, Sendable {
 
     public init(
         selectedModelFile: String? = nil,
-        contextLength: Int = 8192,
+        contextLength: Int = 16384,
         kvCacheType: KVCacheType = .q8_0,
         gpuLayers: Int = -1,
         threads: Int = 0,

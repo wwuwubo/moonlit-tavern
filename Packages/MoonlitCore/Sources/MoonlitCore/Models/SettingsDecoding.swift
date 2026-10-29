@@ -6,6 +6,7 @@ import Foundation
 extension SamplingParams {
     enum CodingKeys: String, CodingKey {
         case temperature, topP, topK, minP, repeatPenalty, repeatLastN, presencePenalty, frequencyPenalty, maxNewTokens, seed
+        case dryMultiplier, dryBase, dryAllowedLength
     }
 
     public init(from decoder: Decoder) throws {
@@ -21,7 +22,10 @@ extension SamplingParams {
             presencePenalty: try c.decodeIfPresent(Double.self, forKey: .presencePenalty) ?? d.presencePenalty,
             frequencyPenalty: try c.decodeIfPresent(Double.self, forKey: .frequencyPenalty) ?? d.frequencyPenalty,
             maxNewTokens: try c.decodeIfPresent(Int.self, forKey: .maxNewTokens) ?? d.maxNewTokens,
-            seed: try c.decodeIfPresent(UInt32.self, forKey: .seed)
+            seed: try c.decodeIfPresent(UInt32.self, forKey: .seed),
+            dryMultiplier: try c.decodeIfPresent(Double.self, forKey: .dryMultiplier) ?? d.dryMultiplier,
+            dryBase: try c.decodeIfPresent(Double.self, forKey: .dryBase) ?? d.dryBase,
+            dryAllowedLength: try c.decodeIfPresent(Int.self, forKey: .dryAllowedLength) ?? d.dryAllowedLength
         )
     }
 }

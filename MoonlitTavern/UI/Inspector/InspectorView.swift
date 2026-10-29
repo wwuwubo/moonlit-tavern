@@ -107,15 +107,19 @@ private struct PersonaCard: View {
             let persona = state.persona(for: chat)
             TextField("名字", text: Binding(
                 get: { persona.name },
-                set: { value in state.updateChat(chat.id) { $0.persona = UserPersona(name: value, description: persona.description) } }
+                set: { value in state.updateChat(chat.id) { var p = persona; p.name = value; $0.persona = p } }
             ))
             .textFieldStyle(.moon)
             TextField("身份描述（可选）", text: Binding(
                 get: { persona.description },
-                set: { value in state.updateChat(chat.id) { $0.persona = UserPersona(name: persona.name, description: value) } }
+                set: { value in state.updateChat(chat.id) { var p = persona; p.description = value; $0.persona = p } }
             ), axis: .vertical)
             .lineLimit(2...5)
             .textFieldStyle(.moon)
+            PersonaGenderPicker(persona: Binding(
+                get: { persona },
+                set: { value in state.updateChat(chat.id) { $0.persona = value } }
+            ))
             if chat.persona != nil {
                 Button("恢复为全局身份") { state.updateChat(chat.id) { $0.persona = nil } }
                     .font(.caption)
@@ -447,6 +451,10 @@ private struct ParamsPanel: View {
                 slider("Min-P", value: $state.settings.sampling.minP, range: 0...0.5, step: 0.01)
                 Stepper("Top-K：\(state.settings.sampling.topK)", value: $state.settings.sampling.topK, in: 0...200, step: 5)
                 slider("重复惩罚", value: $state.settings.sampling.repeatPenalty, range: 1...1.5, step: 0.01)
+                slider("防复述 DRY（0 为关闭）", value: $state.settings.sampling.dryMultiplier, range: 0...2, step: 0.05)
+                Text("DRY 只罚整段照搬前文的句子，越往下抄罚得越重，常用词和人名不受影响。角色老是重复之前说过的话时调高一点。")
+                    .font(.caption)
+                    .foregroundStyle(Theme.textTertiary)
                 slider("存在惩罚 Presence", value: $state.settings.sampling.presencePenalty, range: 0...2, step: 0.05)
                 Button("恢复默认") { state.settings.sampling = SamplingParams() }
                     .font(.caption)
@@ -591,5 +599,35 @@ struct PromptPreviewView: View {
             .navigationTitle("完整提示词")
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("完成") { dismiss() } } }
         }
+    }
+}
+
+
+/// 身份的性别：自动（按描述判断）、男、女。会写进提示词，并在每次回复前提醒模型一次。
+struct PersonaGenderPicker: View {
+    @Binding var persona: UserPersona
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Picker("性别", selection: $persona.gender) {
+                Text("自动").tag(PersonaGender?.none)
+                ForEach(PersonaGender.allCases, id: \.self) { Text($0.label).tag(PersonaGender?.some($0)) }
+            }
+            .pickerStyle(.segmented)
+            .accessibilityIdentifier("personaGenderPicker")
+            Text(hint)
+                .font(.caption)
+                .foregroundStyle(Theme.textTertiary)
+        }
+    }
+
+    private var hint: String {
+        if let gender = persona.gender {
+            return "模型会按\(gender.noun)称呼你，代词用「\(gender.pronoun)」。"
+        }
+        if let detected = PersonaGender.detect(in: persona.description) {
+            return "按身份描述判断为\(detected.label)。判断错了就手动选。"
+        }
+        return "描述里看不出性别，模型可能会猜错。建议手动选。"
     }
 }

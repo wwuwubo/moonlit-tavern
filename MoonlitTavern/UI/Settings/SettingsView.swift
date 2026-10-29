@@ -320,7 +320,7 @@ struct InferenceSettingsView: View {
         Form {
             Section {
                 Picker("上下文长度", selection: $state.settings.local.contextLength) {
-                    ForEach([2048, 3072, 4096, 6144, 8192, 12288, 16384], id: \.self) { Text("\($0)").tag($0) }
+                    ForEach([2048, 3072, 4096, 6144, 8192, 12288, 16384, 24576, 32768], id: \.self) { Text("\($0)").tag($0) }
                 }
                 Picker("KV 缓存精度", selection: $state.settings.local.kvCacheType) {
                     Text("Q8_0（省一半内存）").tag(KVCacheType.q8_0)
@@ -437,6 +437,7 @@ struct PersonaSettingsView: View {
                 TextField("名字", text: $state.settings.persona.name)
                 TextField("身份描述", text: $state.settings.persona.description, axis: .vertical)
                     .lineLimit(3...8)
+                PersonaGenderPicker(persona: $state.settings.persona)
             }
             Section {
                 TextEditor(text: $state.settings.defaultSystemPrompt)

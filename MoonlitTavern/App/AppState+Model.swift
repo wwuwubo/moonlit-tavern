@@ -96,7 +96,8 @@ extension AppState {
         // available 为 0 表示系统没有给出上限（例如模拟器），此时不做估算拦截
         if !force, available > 0, estimate.totalMB > available * 0.95 {
             if let smaller = MemoryPlanner.recommendedContext(
-                fileSizeBytes: file.sizeBytes, shape: file.shape, cacheType: config.kvCacheType, availableMB: available
+                fileSizeBytes: file.sizeBytes, shape: file.shape, cacheType: config.kvCacheType, availableMB: available,
+                candidates: [24576, 16384, 12288, 8192, 6144, 4096, 3072, 2048].filter { $0 < config.contextLength }
             ), smaller < config.contextLength {
                 reducedContextRequest = config.contextLength
                 config.contextLength = smaller

@@ -369,6 +369,29 @@ final class MoonlitTavernUITests: XCTestCase {
         XCTAssertEqual(count(app, "message-assistant"), replies2, "重新生成应替换显示的版本，而不是追加一条")
         save("11b-重新生成", app)
 
+        // 12b. 继续：测试里回复上限只有 48 token，回复多半停在长度上限；继续后内容接在同一条回复后面
+        let beforeCount = count(app, "message-assistant")
+        let beforeText = messages(app, "assistant").element(boundBy: beforeCount - 1).label
+        let truncated = element(app, "truncatedHint").exists
+        let continueButton = element(app, "continueButton")
+        XCTAssertTrue(continueButton.waitForExistence(timeout: 10), "没有「继续」按钮")
+        continueButton.tap()
+        _ = stop.waitForExistence(timeout: 30)
+        let continueDeadline = Date().addingTimeInterval(genTimeout)
+        while Date() < continueDeadline && stop.exists { sleep(2) }
+        sleep(1)
+        let afterCount = count(app, "message-assistant")
+        let afterText = afterCount > 0 ? messages(app, "assistant").element(boundBy: afterCount - 1).label : ""
+        log("继续：截断提示 \(truncated)，续写前 \(beforeText.count) 字，续写后 \(afterText.count) 字，助手消息 \(beforeCount) → \(afterCount)")
+        log("继续后的回复：\(afterText)")
+        XCTAssertEqual(afterCount, beforeCount, "继续应写进同一条回复，不新增消息")
+        if truncated {
+            XCTAssertGreaterThan(afterText.count, beforeText.count, "停在长度上限的回复，继续后没有变长")
+        }
+        XCTAssertTrue(afterText.hasPrefix(String(beforeText.prefix(8))), "继续后回复开头变了")
+        XCTAssertTrue(app.staticTexts["2/2"].exists, "继续不应产生新版本")
+        save("11c-继续", app)
+
         // 13. 导入角色卡：App 文件夹、系统文档选择器、备用选择器
         importCardFromFolder(app)
         importCardThroughPicker(app, button: "pickCardFileButton", file: "uitest-picker",

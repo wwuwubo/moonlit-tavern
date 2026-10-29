@@ -243,6 +243,29 @@ if let s = statsNext {
           "复用 \(s.promptTokens - s.promptTokensEvaluated)/\(s.promptTokens) tok，计算 \(s.promptTokensEvaluated) tok")
 }
 
+// ---------- 继续：先故意截断，再从断开的地方接着写 ----------
+var chatCont = chatNext
+chatCont.append(ChatMessage(role: .assistant, speakerID: erin.id, speakerName: erin.name,
+                            content: ResponseSanitizer.clean(replyNext, speakerName: erin.name)))
+chatCont.append(ChatMessage(role: .user, speakerName: "旅人", content: "给我讲讲这座镇子的来历吧，越详细越好。"))
+let planCut = plan(for: chatCont, characters: [erin], speaker: erin)
+let reqCut = GenerationRequest(messages: planCut.messages, prefill: planCut.prefill, sampling: sampling, maxNewTokens: 24, stopSequences: planCut.stopSequences)
+let (replyCut, statsCut, errCut) = await generate("继续 · 先截断在 24 token", reqCut)
+let baseCut = ReplyFinalizer.finalize(visible: replyCut, speakerName: erin.name).content
+check("继续：截断的回复停在长度上限", errCut == nil && statsCut?.stopReason == "长度上限", critical: false,
+      "停止原因 \(statsCut?.stopReason ?? "无")，\(baseCut.count) 字")
+let reqCont = ReplyContinuation.request(plan: planCut, base: baseCut, supportsPrefill: true, sampling: sampling, maxNewTokens: 80)
+let (addCont, statsCont, errCont) = await generate("继续 · 接着写", reqCont)
+let joinedCont = ReplyContinuation.finalize(base: baseCut, addition: addCont, speakerName: erin.name).content
+log("续写后全文：\(joinedCont)")
+check("继续：续写成功并接在原文后面", errCont == nil && !addCont.isBlank && joinedCont.hasPrefix(baseCut) && joinedCont.count > baseCut.count,
+      "原 \(baseCut.count) 字 + 续写 \(addCont.count) 字 = \(joinedCont.count) 字")
+cleanOutputChecks("继续", addCont)
+if let s = statsCont {
+    check("继续：复用截断那次的上下文", s.promptTokensEvaluated < s.promptTokens / 2, critical: false,
+          "复用 \(s.promptTokens - s.promptTokensEvaluated)/\(s.promptTokens) tok，计算 \(s.promptTokensEvaluated) tok")
+}
+
 // ---------- 停止生成 ----------
 let reqStop = GenerationRequest(messages: plan2.messages, prefill: plan2.prefill, sampling: sampling, maxNewTokens: 300, stopSequences: plan2.stopSequences)
 let (_, statsStop, errStop) = await generate("停止生成（收到 6 段后取消）", reqStop, cancelAfter: 6)

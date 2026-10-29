@@ -37,6 +37,30 @@ extension AppState {
         startReply(chatID: chatID, speakerID: message.speakerID, regenerating: messageID)
     }
 
+    /// 继续：回复写到一半停下（多半是到了回复长度上限）时，从断开的地方接着写，并进同一条回复。
+    func continueReply(messageID: UUID, in chatID: UUID) {
+        cancelSuggestions()
+        guard generation == nil, let chat = chat(chatID), let message = chat.message(messageID), message.role == .assistant else { return }
+        guard let speaker = character(message.speakerID) ?? participants(of: chat).first(where: { $0.name == message.speakerName }) else {
+            show(.warning, "找不到这条回复的角色，无法继续")
+            return
+        }
+        var state = GenerationState(
+            chatID: chatID, speakerID: speaker.id, speakerName: speaker.name,
+            purpose: .reply, phase: .processingPrompt, progress: nil
+        )
+        state.continuingMessageID = messageID
+        state.baseText = message.content
+        generation = state
+        generationTask = Task { [weak self] in
+            guard let self else { return }
+            let saved = await self.runContinuation(chatID: chatID, messageID: messageID, speaker: speaker)
+            if saved, self.settings.suggestions.enabled {
+                self.requestSuggestions(chatID: chatID, messageID: messageID)
+            }
+        }
+    }
+
     func editMessage(_ messageID: UUID, in chatID: UUID, content: String) {
         updateChat(chatID) { $0.editMessage(messageID, content: content) }
     }
@@ -183,6 +207,74 @@ extension AppState {
             show(.error, error.localizedDescription)
             EngineLog.shared.append("生成失败：\(error.localizedDescription)")
             return nil
+        }
+    }
+
+    /// 续写一条回复。返回是否完整写完（没有被停止或出错），用于接着生成剧情选项。
+    private func runContinuation(chatID: UUID, messageID: UUID, speaker: TavernCharacter) async -> Bool {
+        defer {
+            generation = nil
+            generationTask = nil
+        }
+        do {
+            if settings.providerMode == .local {
+                generation?.phase = .loadingModel
+                try await ensureModelLoaded()
+            }
+            guard var promptChat = chat(chatID), let original = promptChat.message(messageID) else { return false }
+            promptChat.activeLeafID = original.parentID
+            let engine = activeEngine()
+            let plan = await buildPlan(for: promptChat, speaker: speaker, engine: engine)
+            lastPlans[chatID] = snapshot(plan, engine: engine.engineName)
+            let request = ReplyContinuation.request(
+                plan: plan, base: original.content, supportsPrefill: engine.isLocal,
+                sampling: settings.sampling, maxNewTokens: settings.effectiveMaxNewTokens
+            )
+            var finalStats: GenerationStats?
+            var cancelled = false
+            var streamError: Error?
+            do {
+                for try await event in engine.generate(request) {
+                    switch event {
+                    case .progress(let phase, let value):
+                        generation?.phase = phase
+                        generation?.progress = value
+                    case .text(let delta):
+                        generation?.text += delta
+                    case .finished(let stats):
+                        finalStats = stats
+                    }
+                }
+            } catch InferenceError.cancelled {
+                cancelled = true
+            } catch is CancellationError {
+                cancelled = true
+            } catch {
+                streamError = error
+            }
+            if Task.isCancelled || finalStats?.stopReason == "用户停止" { cancelled = true }
+
+            let addition = generation?.text ?? ""
+            let outcome = ReplyContinuation.finalize(base: original.content, addition: addition, speakerName: speaker.name)
+            let stopReason = streamError.map { "出错：\($0.localizedDescription)" }
+                ?? (cancelled ? "用户停止" : (finalStats?.stopReason ?? "未知"))
+            EngineLog.shared.append("继续回复：原有 \(original.content.count) 字，续写 \(addition.count) 字，停止原因 \(stopReason)，保存后 \(outcome.content.count) 字")
+            if outcome.content.count > original.content.count {
+                var stats = finalStats
+                if cancelled || streamError != nil { stats?.stopReason = stopReason }
+                updateChat(chatID) { $0.continueMessage(messageID, content: outcome.content, stats: stats) }
+                if let stats { lastStats = stats }
+            } else if !cancelled, streamError == nil {
+                show(.info, "模型认为这条回复已经写完了，没有续写内容。")
+            }
+            if let streamError {
+                show(.warning, "续写中途出错（\(streamError.localizedDescription)），已保存已经写出的部分。")
+            }
+            return !cancelled && streamError == nil
+        } catch {
+            show(.error, error.localizedDescription)
+            EngineLog.shared.append("继续回复失败：\(error.localizedDescription)")
+            return false
         }
     }
 

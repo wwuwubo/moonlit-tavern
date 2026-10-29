@@ -154,8 +154,12 @@ public struct PromptBuilder {
             systemSections.append("【相关设定】\n" + loreAfter.joined(separator: "\n"))
         }
 
-        if !ctx.persona.description.isBlank {
-            systemSections.append("【\(ctx.persona.name)（用户）】\n" + macro.expand(ctx.persona.description).trimmed)
+        let personaGender = ctx.persona.effectiveGender
+        if !ctx.persona.description.isBlank || personaGender != nil {
+            var lines: [String] = []
+            if let personaGender { lines.append("性别：\(personaGender.label)") }
+            if !ctx.persona.description.isBlank { lines.append(macro.expand(ctx.persona.description).trimmed) }
+            systemSections.append("【\(ctx.persona.name)（用户）】\n" + lines.joined(separator: "\n"))
         }
 
         if !ctx.session.plotState.isEmpty {
@@ -177,6 +181,13 @@ public struct PromptBuilder {
             tailMessages.append(PromptMessage(
                 role: .system,
                 content: "现在轮到\(speaker.name)发言。只写\(speaker.name)的台词、动作和心理，不要替\(others.joined(separator: "、"))说话或行动。"
+            ))
+        }
+        // 用户性别放在最靠近回复的位置：设定写在开头时，小模型聊几轮就会忘，或者被角色卡里的写法带偏
+        if let personaGender {
+            tailMessages.append(PromptMessage(
+                role: .system,
+                content: "（\(ctx.persona.name)是\(personaGender.noun)，称呼和代词用「\(personaGender.pronoun)」。）"
             ))
         }
         let tailTokens = tailMessages.reduce(0) { $0 + counter.count($1.content) + overhead }

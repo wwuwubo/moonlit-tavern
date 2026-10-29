@@ -169,7 +169,14 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
             ? config.threads
             : max(1, min(6, ProcessInfo.processInfo.activeProcessorCount - 2))
         var cparams = llama_context_default_params()
-        cparams.n_ctx = UInt32(config.contextLength)
+        // 超过模型训练时的上下文长度没有意义，后面的内容模型也看不懂，按训练长度封顶
+        let trainedContext = Int(llama_model_n_ctx_train(loadedModel))
+        var contextLength = config.contextLength
+        if trainedContext > 0, contextLength > trainedContext {
+            EngineLog.shared.append("上下文 \(contextLength) 超过模型训练长度 \(trainedContext)，按 \(trainedContext) 加载")
+            contextLength = trainedContext
+        }
+        cparams.n_ctx = UInt32(contextLength)
         cparams.n_batch = UInt32(config.batchSize)
         cparams.n_ubatch = UInt32(min(config.batchSize, 512))
         cparams.n_seq_max = 1
@@ -531,6 +538,22 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
                 Float(sampling.presencePenalty)
             ))
         }
+        // DRY 防重复：模型要接着复述上下文里已经出现过的一段话时，复述得越长罚得越重。
+        // 范围是整个上下文，所以前面回复里写过的句子、角色卡里的原话都算在内；
+        // 换行、冒号、引号、星号处断开匹配，人名加冒号这类固定格式不受影响。
+        let dryLastN = Int(nCtx)
+        if sampling.dryMultiplier > 0 {
+            let breakers = ["\n", ":", "：", "\"", "“", "”", "「", "」", "*"]
+            let cStrings = breakers.map { strdup($0) }
+            defer { cStrings.forEach { free($0) } }
+            var pointers: [UnsafePointer<CChar>?] = cStrings.map { UnsafePointer($0) }
+            let dry = pointers.withUnsafeMutableBufferPointer { buffer in
+                llama_sampler_init_dry(vocab, Float(sampling.dryMultiplier), Float(sampling.dryBase),
+                                       Int32(max(sampling.dryAllowedLength, 1)), Int32(dryLastN),
+                                       buffer.baseAddress, buffer.count)
+            }
+            if let dry { llama_sampler_chain_add(chain, dry) }
+        }
         if sampling.topK > 0 { llama_sampler_chain_add(chain, llama_sampler_init_top_k(Int32(sampling.topK))) }
         if sampling.topP < 1 { llama_sampler_chain_add(chain, llama_sampler_init_top_p(Float(sampling.topP), 1)) }
         if sampling.minP > 0 { llama_sampler_chain_add(chain, llama_sampler_init_min_p(Float(sampling.minP), 1)) }
@@ -541,8 +564,9 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
             // UInt32.max 即 LLAMA_DEFAULT_SEED：每次随机
             llama_sampler_chain_add(chain, llama_sampler_init_dist(sampling.seed ?? UInt32.max))
         }
-        // 让重复惩罚看到最近的上下文
-        for tok in promptTokens.suffix(max(sampling.repeatLastN, 0)) {
+        // 让重复惩罚和 DRY 看到上下文（重复惩罚只保留最近 repeatLastN 个，DRY 看整个上下文）
+        let historyWindow = sampling.dryMultiplier > 0 ? dryLastN : max(sampling.repeatLastN, 0)
+        for tok in promptTokens.suffix(historyWindow) {
             llama_sampler_accept(chain, tok)
         }
 

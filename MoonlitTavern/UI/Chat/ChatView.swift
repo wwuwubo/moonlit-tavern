@@ -40,7 +40,8 @@ struct ChatView: View {
                     if let first = state.participants(of: chat).first, path.count <= 1 {
                         ChatIntroCard(character: first, chat: chat)
                     }
-                    ForEach(path) { message in
+                    // 正在「继续」的那条回复由下面的流式气泡连同续写一起显示
+                    ForEach(path.filter { $0.id != state.generation?.continuingMessageID }) { message in
                         MessageRow(
                             chat: chat,
                             message: message,
@@ -291,6 +292,15 @@ struct MessageRow: View {
                         .buttonStyle(.plain)
                         .foregroundStyle(Theme.textSecondary)
                         .disabled(state.isGenerating)
+                        Button {
+                            state.continueReply(messageID: message.id, in: chat.id)
+                        } label: {
+                            Label("继续", systemImage: "text.append")
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(message.stats?.stopReason == "长度上限" ? Theme.amber : Theme.textSecondary)
+                        .disabled(state.isGenerating)
+                        .accessibilityIdentifier("continueButton")
                     }
                     if let stats = message.stats, stats.generatedTokens > 0 {
                         Text(statsText(stats))
@@ -298,6 +308,13 @@ struct MessageRow: View {
                     }
                 }
                 .font(.caption)
+
+                if !isUser, isLast, message.stats?.stopReason == "长度上限", state.generation?.chatID != chat.id {
+                    Text("写到回复长度上限停下了，点「继续」接着写；常常不够用的话，在右侧「参数」里调长回复长度。")
+                        .font(.caption2)
+                        .foregroundStyle(Theme.textTertiary)
+                        .accessibilityIdentifier("truncatedHint")
+                }
 
                 if !isUser, isLast, state.generation?.chatID != chat.id {
                     SuggestionPanel(chat: chat, message: message, onEdit: onUseSuggestion)
@@ -441,10 +458,11 @@ struct StreamingBubble: View {
                     PhaseLabel(generation: generation)
                 }
                 Group {
-                    if generation.text.isEmpty {
+                    let shown = generation.baseText + generation.text
+                    if shown.isEmpty {
                         TypingDots()
                     } else if generation.purpose == .reply {
-                        MessageContentView(text: generation.text + " ▍")
+                        MessageContentView(text: shown + " ▍")
                     } else {
                         Text(generation.text).font(.footnote).foregroundStyle(Theme.textSecondary)
                     }
