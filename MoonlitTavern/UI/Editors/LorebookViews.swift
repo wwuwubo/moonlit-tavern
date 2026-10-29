@@ -52,8 +52,8 @@ struct LorebookListView: View {
                     .accessibilityLabel("新建世界书")
             }
         }
-        .fileImporter(isPresented: $showImporter, allowedContentTypes: [.json, .png, .data]) { result in
-            if case .success(let url) = result { state.importLorebook(from: url) }
+        .documentImporter(isPresented: $showImporter, types: [.json, .png, .data]) { url in
+            state.importLorebook(from: url)
         }
         .exporter($pendingExport) { result in
             if case .failure(let error) = result { state.show(.error, "导出失败：\(error.localizedDescription)") }

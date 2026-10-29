@@ -45,6 +45,52 @@ final class MoonlitTavernUITests: XCTestCase {
         }
     }
 
+    /// 打开「+ › 导入角色卡」，在文档选择器里找到测试角色卡并选中，确认侧栏出现新角色。
+    private func importCardThroughPicker(_ app: XCUIApplication) {
+        let add = element(app, "addMenu")
+        guard add.waitForExistence(timeout: 10) else { log("导入角色卡：找不到「+」按钮"); return }
+        add.tap()
+        let item = app.buttons["导入角色卡（PNG / JSON）"]
+        guard item.waitForExistence(timeout: 5) else { log("导入角色卡：菜单里没有导入项"); return }
+        item.tap()
+        sleep(2)
+        save("12-文档选择器", app)
+
+        func tapFirst(_ labels: [String], timeout: TimeInterval = 8) -> String? {
+            let deadline = Date().addingTimeInterval(timeout)
+            while Date() < deadline {
+                for label in labels {
+                    for query in [app.cells, app.staticTexts, app.buttons] {
+                        let e = query.matching(NSPredicate(format: "label == %@", label)).firstMatch
+                        if e.exists && e.isHittable { e.tap(); return label }
+                    }
+                }
+                sleep(1)
+            }
+            return nil
+        }
+        // iPad 上的选择器左侧是位置列表；有的系统版本要先点「浏览」
+        _ = tapFirst(["Browse", "浏览"], timeout: 3)
+        let location = tapFirst(["On My iPad", "我的 iPad", "在我的 iPad 上"])
+        log("导入角色卡：位置 \(location ?? "未找到")")
+        sleep(1)
+        let folder = tapFirst(["月下酒馆", "MoonlitTavern"])
+        log("导入角色卡：文件夹 \(folder ?? "未找到")")
+        sleep(1)
+        let file = tapFirst(["uitest-card.json", "uitest-card"])
+        log("导入角色卡：文件 \(file ?? "未找到")")
+        if file == nil {
+            let visible = app.staticTexts.allElementsBoundByIndex.prefix(40).map(\.label).joined(separator: " | ")
+            log("导入角色卡：当前可见文字 \(visible)")
+            save("12-文档选择器-未找到文件", app)
+            return
+        }
+        let imported = app.staticTexts["测试旅者"].waitForExistence(timeout: 15)
+        log("导入角色卡：侧栏出现「测试旅者」：\(imported)")
+        save("13-导入角色卡后", app)
+        XCTAssertTrue(imported, "通过文档选择器导入角色卡失败")
+    }
+
     func testLocalRoleplayEndToEnd() throws {
         let app = XCUIApplication()
         app.launchEnvironment["MOONLIT_UITEST"] = "1"
@@ -185,6 +231,9 @@ final class MoonlitTavernUITests: XCTestCase {
             log("重启后回复内容：\(reply2.label)")
         }
         save("11-重启后继续对话", app)
+
+        // 9. 通过系统文档选择器导入角色卡（App 启动时在「我的 iPad › 月下酒馆」放了 uitest-card.json）
+        importCardThroughPicker(app)
         log("测试流程结束")
     }
 }

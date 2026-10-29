@@ -86,12 +86,12 @@ struct SidebarView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
+                .accessibilityLabel("新建或导入")
+                .accessibilityIdentifier("addMenu")
             }
         }
-        .fileImporter(isPresented: $showCardImporter, allowedContentTypes: [.png, .json, .image, .data], allowsMultipleSelection: true) { result in
-            if case .success(let urls) = result {
-                for url in urls { state.importCharacterCard(from: url) }
-            }
+        .documentImporter(isPresented: $showCardImporter, types: [.png, .json, .image, .data]) { url in
+            _ = state.importCharacterCard(from: url)
         }
         .sheet(item: $editingCharacter) { character in
             CharacterEditorView(character: character)

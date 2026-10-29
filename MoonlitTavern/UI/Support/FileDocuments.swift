@@ -35,16 +35,12 @@ struct PendingExport: Identifiable {
 }
 
 extension View {
-    /// 统一的导出入口：绑定一个可选的 PendingExport，非空即弹出保存面板。
+    /// 统一的导出入口：绑定一个可选的 PendingExport，非空即弹出系统「存储到」面板。
     func exporter(_ pending: Binding<PendingExport?>, onDone: @escaping (Result<URL, Error>) -> Void = { _ in }) -> some View {
-        fileExporter(
-            isPresented: Binding(get: { pending.wrappedValue != nil }, set: { if !$0 { pending.wrappedValue = nil } }),
-            document: pending.wrappedValue?.document,
-            contentType: pending.wrappedValue?.contentType ?? .data,
-            defaultFilename: pending.wrappedValue?.fileName
-        ) { result in
-            onDone(result)
+        onChange(of: pending.wrappedValue?.id) { _, id in
+            guard id != nil, let job = pending.wrappedValue else { return }
             pending.wrappedValue = nil
+            DocumentPicker.export(job.document.data, fileName: job.fileName, onDone: onDone)
         }
     }
 }

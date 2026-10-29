@@ -115,6 +115,7 @@ final class AppState: ObservableObject {
         lorebooks = store.loadLorebooks()
         benchmarks = BenchmarkResult.load(from: store.root)
         if firstLaunch { installSampleData() }
+        if isUITest { Self.writeUITestCard() }
         if !store.loadIssues.isEmpty {
             banner = Banner(kind: .warning, text: "有 \(store.loadIssues.count) 个数据文件无法读取，已跳过。")
         }
@@ -206,6 +207,27 @@ final class AppState: ObservableObject {
     }
 
     // MARK: - 示例数据
+
+    /// UI 自动化测试：在「文件 › 我的 iPad › 月下酒馆」里放一张测试角色卡，供测试通过系统文档选择器导入。
+    private static func writeUITestCard() {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let card: [String: Any] = [
+            "spec": "chara_card_v2",
+            "spec_version": "2.0",
+            "data": [
+                "name": "测试旅者",
+                "description": "用于自动化测试的角色。",
+                "personality": "安静",
+                "scenario": "",
+                "first_mes": "你好。",
+                "mes_example": "",
+                "tags": ["测试"],
+            ] as [String: Any],
+        ]
+        if let data = try? JSONSerialization.data(withJSONObject: card, options: [.prettyPrinted]) {
+            try? data.write(to: docs.appendingPathComponent("uitest-card.json"), options: .atomic)
+        }
+    }
 
     private func installSampleData() {
         let book = SampleData.lorebook
@@ -325,8 +347,17 @@ final class AppState: ObservableObject {
     func importCharacterCard(from url: URL) -> TavernCharacter? {
         let accessed = url.startAccessingSecurityScopedResource()
         defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+        let fileName = url.lastPathComponent
+        let data: Data
         do {
-            let data = try Data(contentsOf: url)
+            data = try Self.readFile(at: url)
+        } catch {
+            EngineLog.shared.append("读取角色卡失败：\(fileName)：\(error)")
+            show(.error, "读不到文件「\(fileName)」：\(error.localizedDescription)")
+            return nil
+        }
+        EngineLog.shared.append("导入角色卡：\(fileName)，\(data.count) 字节")
+        do {
             let result = try CharacterCardCodec.importCard(from: data)
             var c = result.character
             c.id = UUID()
@@ -341,9 +372,21 @@ final class AppState: ObservableObject {
             show(.success, note)
             return c
         } catch {
-            show(.error, "导入失败：\(error.localizedDescription)")
+            EngineLog.shared.append("解析角色卡失败：\(fileName)：\(error)")
+            show(.error, "「\(fileName)」不是可识别的角色卡：\(error.localizedDescription)")
             return nil
         }
+    }
+
+    /// 读取用户选择的文件。经过文件协调器读取：iCloud 里还没下载到本机的文件会先下载。
+    nonisolated static func readFile(at url: URL) throws -> Data {
+        var coordinationError: NSError?
+        var result: Result<Data, Error> = .failure(CocoaError(.fileReadUnknown))
+        NSFileCoordinator().coordinate(readingItemAt: url, options: .withoutChanges, error: &coordinationError) { readURL in
+            result = Result(catching: { try Data(contentsOf: readURL) })
+        }
+        if let coordinationError { throw coordinationError }
+        return try result.get()
     }
 
     func exportCardPNG(_ character: TavernCharacter) throws -> Data {
@@ -384,7 +427,7 @@ final class AppState: ObservableObject {
         let accessed = url.startAccessingSecurityScopedResource()
         defer { if accessed { url.stopAccessingSecurityScopedResource() } }
         do {
-            let data = try Data(contentsOf: url)
+            let data = try Self.readFile(at: url)
             let book: Lorebook
             if PNGChunks.isPNG(data) {
                 // 从角色卡 PNG 里取世界书
@@ -523,7 +566,7 @@ final class AppState: ObservableObject {
         let accessed = url.startAccessingSecurityScopedResource()
         defer { if accessed { url.stopAccessingSecurityScopedResource() } }
         do {
-            let data = try Data(contentsOf: url)
+            let data = try Self.readFile(at: url)
             let summary = try store.restore(from: data, includeSettings: includeSettings)
             characters = store.loadCharacters()
             chats = store.loadChats()

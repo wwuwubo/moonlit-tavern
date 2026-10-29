@@ -150,10 +150,8 @@ struct ModelManagerView: View {
                 Button { showImporter = true } label: { Label("导入", systemImage: "square.and.arrow.down") }
             }
         }
-        .fileImporter(isPresented: $showImporter, allowedContentTypes: [.gguf, .data]) { result in
-            if case .success(let url) = result {
-                Task { await library.importModel(from: url) }
-            }
+        .documentImporter(isPresented: $showImporter, types: [.gguf, .data], asCopy: false) { url in
+            Task { await library.importModel(from: url) }
         }
         .task { await library.refresh() }
         .onChange(of: library.lastError) { _, error in
@@ -491,8 +489,8 @@ struct BackupView: View {
             case .failure(let error): state.show(.error, "备份保存失败：\(error.localizedDescription)")
             }
         }
-        .fileImporter(isPresented: $showImporter, allowedContentTypes: [.json, .data]) { result in
-            if case .success(let url) = result { state.restoreBackup(from: url, includeSettings: includeSettings) }
+        .documentImporter(isPresented: $showImporter, types: [.json, .data]) { url in
+            state.restoreBackup(from: url, includeSettings: includeSettings)
         }
     }
 }

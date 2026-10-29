@@ -131,12 +131,10 @@ struct CharacterEditorView: View {
                     }
                 }
             }
-            .fileImporter(isPresented: $showAvatarFile, allowedContentTypes: [.image]) { result in
-                if case .success(let url) = result {
-                    let accessed = url.startAccessingSecurityScopedResource()
-                    defer { if accessed { url.stopAccessingSecurityScopedResource() } }
-                    pendingAvatar = try? Data(contentsOf: url)
-                }
+            .documentImporter(isPresented: $showAvatarFile, types: [.image]) { url in
+                let accessed = url.startAccessingSecurityScopedResource()
+                defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+                pendingAvatar = try? Data(contentsOf: url)
             }
             .sheet(isPresented: $editingBook) {
                 NavigationStack {
