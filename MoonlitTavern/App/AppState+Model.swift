@@ -188,7 +188,7 @@ extension AppState {
                     generation?.phase = phase
                     generation?.progress = value
                 case .text(let delta):
-                    stream.append(delta)
+                    generation?.text += delta
                 case .finished(let s):
                     stats = s
                 }

@@ -58,7 +58,7 @@ struct ChatView: View {
                         .id(message.id)
                     }
                     if let generation = state.generation, generation.chatID == chatID {
-                        StreamingBubble(stream: state.stream, generation: generation)
+                        StreamingBubble(generation: generation)
                             .id("streaming")
                     }
                     Color.clear.frame(height: 4).id("bottom")
@@ -73,8 +73,9 @@ struct ChatView: View {
             .onChange(of: path.count) { _, _ in
                 withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo("bottom", anchor: .bottom) }
             }
-            // 生成时跟着滚到底。放在背景里单独观察流式文本，不让整个列表跟着每次刷新重算
-            .background(StreamFollower(stream: state.stream) { proxy.scrollTo("bottom", anchor: .bottom) })
+            .onChange(of: state.generation?.text.count ?? 0) { _, _ in
+                proxy.scrollTo("bottom", anchor: .bottom)
+            }
         }
     }
 
@@ -441,22 +442,9 @@ struct SuggestionPanel: View {
     }
 }
 
-/// 流式文本每刷新一次，滚到底一次。
-private struct StreamFollower: View {
-    @ObservedObject var stream: StreamingText
-    let follow: () -> Void
-
-    var body: some View {
-        Color.clear
-            .frame(width: 0, height: 0)
-            .onChange(of: stream.shown.count) { _, _ in follow() }
-    }
-}
-
 /// 正在生成的回复。
 struct StreamingBubble: View {
     @EnvironmentObject private var state: AppState
-    @ObservedObject var stream: StreamingText
     let generation: GenerationState
 
     var body: some View {
@@ -470,20 +458,13 @@ struct StreamingBubble: View {
                     PhaseLabel(generation: generation)
                 }
                 Group {
-                    let shown = generation.baseText + stream.shown
+                    let shown = generation.baseText + generation.text
                     if shown.isEmpty {
                         TypingDots()
                     } else if generation.purpose == .reply {
-                        // 写完的段落不再变化，只有最后一段每次重新排版
-                        let parts = MarkdownParser.streamingSplit(shown)
-                        VStack(alignment: .leading, spacing: 8) {
-                            if !parts.settled.isEmpty {
-                                MessageContentView(text: parts.settled, selectable: false).equatable()
-                            }
-                            MessageContentView(text: parts.tail + " ▍", selectable: false)
-                        }
+                        MessageContentView(text: shown + " ▍")
                     } else {
-                        Text(stream.shown).font(.footnote).foregroundStyle(Theme.textSecondary)
+                        Text(generation.text).font(.footnote).foregroundStyle(Theme.textSecondary)
                     }
                 }
                 .padding(.horizontal, 14)

@@ -2,19 +2,13 @@ import SwiftUI
 import MoonlitCore
 
 /// 消息正文渲染：基础 Markdown + 角色扮演习惯（*动作* 斜体淡色，“对白”烛光色）。
-struct MessageContentView: View, Equatable {
+struct MessageContentView: View {
     let text: String
     var isUser = false
-    /// 生成中的气泡不需要选择文字
-    var selectable = true
 
     var body: some View {
-        let blocks = MarkdownBlocksView(blocks: MarkdownParser.blocks(text))
-        if selectable {
-            blocks.textSelection(.enabled)
-        } else {
-            blocks
-        }
+        MarkdownBlocksView(blocks: MarkdownParser.blocks(text))
+            .textSelection(.enabled)
     }
 
     static func styled(_ source: String) -> AttributedString {

@@ -22,7 +22,7 @@ enum ModelState: Equatable {
     }
 }
 
-/// 正在进行的生成（回复或摘要）。流式文本放在 AppState.stream 里，结束后才写入聊天记录。
+/// 正在进行的生成（回复或摘要）。流式文本先放这里，结束后才写入聊天记录。
 struct GenerationState: Equatable {
     enum Purpose { case reply, summary, benchmark }
     var chatID: UUID?
@@ -31,6 +31,7 @@ struct GenerationState: Equatable {
     var purpose: Purpose
     var phase: GenerationPhase
     var progress: Double?
+    var text: String = ""
     var startedAt = Date()
     var regeneratingMessageID: UUID?
     /// 正在「继续」的回复：界面把它和流式文本合成一条显示
@@ -65,12 +66,7 @@ final class AppState: ObservableObject {
     }
 
     @Published var selectedChatID: UUID?
-    @Published var generation: GenerationState? {
-        // 开始新的生成、或者生成结束时，清空流式文本
-        didSet { if generation == nil || oldValue == nil { stream.reset() } }
-    }
-    /// 正在生成的文字。不放进 generation：那样每来一个 token 整个 App 都要重绘一遍
-    let stream = StreamingText()
+    @Published var generation: GenerationState?
     @Published var modelState: ModelState = .unloaded
     @Published var banner: Banner?
     @Published var lastPlans: [UUID: PlanSnapshot] = [:]
