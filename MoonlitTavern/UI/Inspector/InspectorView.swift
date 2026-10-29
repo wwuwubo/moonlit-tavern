@@ -467,6 +467,7 @@ private struct ParamsPanel: View {
                     .foregroundStyle(Theme.textTertiary)
             }
             SectionCard(title: "提示词") {
+                Toggle("回复前提醒模型接着你最后说的话写", isOn: $state.settings.replyReminder)
                 Toggle("放入示例对话（有剩余空间时）", isOn: $state.settings.includeExampleDialogue)
                 Stepper("世界书预算 \(state.settings.loreTokenBudget) token", value: $state.settings.loreTokenBudget, in: 100...4000, step: 100)
                 Stepper("记忆预算 \(state.settings.memory.tokenBudget) token", value: $state.settings.memory.tokenBudget, in: 100...3000, step: 100)
