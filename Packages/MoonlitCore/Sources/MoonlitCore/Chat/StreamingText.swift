@@ -90,6 +90,18 @@ public struct StreamingTextFilter: Sendable {
     /// 原始输出的字符数（诊断用）
     public var rawCount: Int { raw.count }
 
+    /// 文字停在半句话上：最后一个字不是句末标点、收尾的引号括号或动作描写的星号。
+    /// 引擎据此判断模型是不是在半句话处收了尾。空文本不算。
+    public static func endsMidSentence(_ text: String) -> Bool {
+        guard let last = text.trimmingCharacters(in: .whitespacesAndNewlines).last else { return false }
+        return !sentenceEnders.contains(last)
+    }
+
+    private static let sentenceEnders: Set<Character> = [
+        "。", "！", "？", "!", "?", ".", "…", "」", "』", "\"", "”", "’", "）", ")", "】", "》",
+        "*", "~", "～", "—", "♪", ">", "`"
+    ]
+
     /// 输入新文本，返回本次可以显示的增量。
     public mutating func feed(_ piece: String) -> String {
         guard !stopped, !piece.isEmpty else { return "" }

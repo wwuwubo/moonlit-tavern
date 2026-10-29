@@ -636,16 +636,32 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
         var stopReason = "长度上限"
         var nPast = promptTokens.count
 
+        var sentenceBudget = 64
+        var finishingSentence = false
+        var extendedForSentence = 0
         while generated < maxNew {
             if cancelToken.isCancelled { stopReason = "用户停止"; break }
             if holdingEnd && generated >= minNew {
                 llama_sampler_free(llama_sampler_chain_remove(chain, 0))
                 holdingEnd = false
             }
-            let next = llama_sampler_sample(chain, ctx, -1)
+            var next = llama_sampler_sample(chain, ctx, -1)
             if firstTokenTime == nil { firstTokenTime = Date() }
+            // 写到半句话就要收尾（DRY 把正常的下文都罚低时，结束符反而排到了前面）：
+            // 屏蔽结束符重新抽一次，把这句写完。最多多写 sentenceBudget 个 token
+            if llama_vocab_is_eog(vocab, next), request.purpose == .reply, sentenceBudget > 0,
+               StreamingTextFilter.endsMidSentence(filter.visibleText),
+               let logits = llama_get_logits_ith(ctx, -1) {
+                for token in endTokens { logits[Int(token)] = -Float.infinity }
+                next = llama_sampler_sample(chain, ctx, -1)
+                finishingSentence = true
+            }
             if llama_vocab_is_eog(vocab, next) { stopReason = "自然结束"; break }
             generated += 1
+            if finishingSentence {
+                sentenceBudget -= 1
+                extendedForSentence += 1
+            }
 
             let text = utf8.append(Self.piece(vocab: vocab, token: next))
             let visible = filter.feed(text)
@@ -681,6 +697,9 @@ final class LlamaEngine: InferenceEngine, @unchecked Sendable {
             EngineLog.shared.append("思考段直到结束都没闭合，已把其中 \(filter.visibleText.count) 字当正文显示（停止原因：\(stopReason)）")
         } else if filter.hiddenThinkingCount > 0 {
             EngineLog.shared.append("隐藏了 \(filter.hiddenThinkingCount) 字思考内容")
+        }
+        if extendedForSentence > 0 {
+            EngineLog.shared.append("模型写到半句话要收尾，接着写了 \(extendedForSentence) token 把这句写完")
         }
         if let stop = filter.matchedStop {
             EngineLog.shared.append("命中停止词「\(stop.replacingOccurrences(of: "\n", with: "\\n"))」，原始输出 \(filter.rawCount) 字，显示 \(filter.visibleText.count) 字")

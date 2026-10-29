@@ -250,6 +250,16 @@ final class PersonaAndContinuationTests: XCTestCase {
         XCTAssertEqual(MarkdownParser.streamingSplit("只有一段").settled, "")
     }
 
+    func testEndsMidSentence() {
+        XCTAssertTrue(StreamingTextFilter.endsMidSentence("\u{201C}你以为……还能"))
+        XCTAssertTrue(StreamingTextFilter.endsMidSentence("她咬紧牙关，"))
+        XCTAssertFalse(StreamingTextFilter.endsMidSentence("本座今日就让你万劫不复！\u{201D}"))
+        XCTAssertFalse(StreamingTextFilter.endsMidSentence("*她推开门。*\n"))
+        XCTAssertFalse(StreamingTextFilter.endsMidSentence("「滚开！」"))
+        XCTAssertFalse(StreamingTextFilter.endsMidSentence("你以为……"))
+        XCTAssertFalse(StreamingTextFilter.endsMidSentence(""), "什么都没写时交给「写够长度」处理")
+    }
+
     func testStripTagsKeepsTextAndCode() {
         XCTAssertEqual(HTMLLite.stripTags("第一行<br>第二行<br/>第三行"), "第一行\n第二行\n第三行")
         XCTAssertEqual(HTMLLite.stripTags("<span style=\"color:red\">红字</span>"), "红字")
