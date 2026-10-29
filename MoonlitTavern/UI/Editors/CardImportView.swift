@@ -55,7 +55,7 @@ struct CardImportView: View {
             .buttonStyle(.borderless)
             TextEditor(text: $jsonText)
                 .font(.system(.footnote, design: .monospaced))
-                .frame(minHeight: 160)
+                .frame(minHeight: 110, maxHeight: 220)
                 .scrollContentBackground(.hidden)
                 .background(RoundedRectangle(cornerRadius: 8).fill(Theme.background.opacity(0.7)))
                 .accessibilityIdentifier("cardJSONEditor")
@@ -128,15 +128,22 @@ struct CardImportView: View {
     private var pickerSection: some View {
         Section {
             Button {
-                DocumentPicker.open([.png, .json, .image, .data]) { url in
-                    if state.importCharacterCard(from: url) != nil { dismiss() }
+                // 先收起这个页面，再从主界面弹出系统选择器：不在弹出的页面上再叠一层
+                let appState = state
+                dismiss()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                    DocumentPicker.open([.png, .json, .image, .data]) { url in
+                        appState.importCharacterCard(from: url)
+                    }
                 }
             } label: {
                 Label("从「文件」中选择…", systemImage: "folder")
             }
             .accessibilityIdentifier("pickCardFileButton")
+        } header: {
+            Text("从「文件」中选择")
         } footer: {
-            Text("点一下文件就会导入，不需要再按「打开」。")
+            Text("点一下文件就会导入，不需要再按「打开」。如果选择器打不开或一片空白，请用上面两种方式。")
         }
     }
 }

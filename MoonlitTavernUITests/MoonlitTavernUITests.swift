@@ -112,8 +112,12 @@ final class MoonlitTavernUITests: XCTestCase {
     /// 通过系统文档选择器导入：我的 iPad › 月下酒馆 › 角色卡 › uitest-picker.json
     private func importCardThroughPicker(_ app: XCUIApplication) {
         XCTAssertTrue(openCardImport(app), "导入界面没有打开")
-        element(app, "pickCardFileButton").tap()
-        sleep(3)
+        let pickButton = element(app, "pickCardFileButton")
+        for _ in 0..<4 where !pickButton.isHittable { app.swipeUp() }
+        log("选择器导入：按钮可点 \(pickButton.isHittable)")
+        pickButton.tap()
+        sleep(4)
+        save("13-文档选择器", app)
 
         // 选择器里的文件夹和文件是集合视图的单元格，标签后面会带「2 items」、日期、大小等信息，
         // 所以按前缀匹配；位置列表按完整标签匹配
@@ -149,8 +153,8 @@ final class MoonlitTavernUITests: XCTestCase {
         let file = tapFirst(["uitest-picker"], prefix: true)
         log("选择器导入：文件 \(file ?? "未找到")")
         if file == nil {
-            let visible = app.cells.allElementsBoundByIndex.prefix(40).map(\.label).joined(separator: " | ")
-            log("选择器导入：当前可见单元格 \(visible)")
+            // 界面层级快照（逐个读取单元格在界面变化时会失败，所以整体取一次）
+            log("选择器导入：界面层级 \(String(app.debugDescription.prefix(3000)))")
             save("13-文档选择器-未找到文件", app)
         }
         let imported = app.staticTexts["选择器旅者"].waitForExistence(timeout: 15)
