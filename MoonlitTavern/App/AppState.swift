@@ -66,6 +66,11 @@ final class AppState: ObservableObject {
     @Published var banner: Banner?
     @Published var lastPlans: [UUID: PlanSnapshot] = [:]
     @Published var lastStats: GenerationStats?
+    /// 某个存档的最近一次剧情行动建议，以及它关联的角色回复 ID。
+    @Published var suggestedActions: [UUID: [String]] = [:]
+    @Published var suggestedActionSourceIDs: [UUID: UUID] = [:]
+    @Published var actionsLoadingChatID: UUID?
+    var actionsTask: Task<Void, Never>?
     @Published var benchmarks: [BenchmarkResult] = []
     @Published var thermalLabel = DeviceMetrics.thermalLabel
 
