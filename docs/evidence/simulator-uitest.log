@@ -1,17 +1,21 @@
-run: 5 (40788449971)
-sha: 35aa1c4db44ab5da0d43b8ac25b6ac6c14757011
+run: 8 (40798529308)
+sha: ad967c5c4e10ddbec54a644a54646e25b96fc17d
 label: simulator-uitest
-date: 2026-10-28T23:41:40Z
+date: 2026-10-29T01:14:20Z
 
 Test Case '-[MoonlitTavernUITests.MoonlitTavernUITests testLocalRoleplayEndToEnd]' started.
 [UITest] 启动完成，开场白消息数 1
 [UITest] 模型管理页识别到模型：true
 [UITest] 生成开始（出现停止按钮）：true
-[UITest] 生成结束，用时 9.5 秒，助手消息数 2
-[UITest] 回复内容：她刚要开口，手指却僵在吧台上，像是被烫到似的猛地缩回——那是她在上周为了“偷听王都密报”差点把全城人吓成傻子时留下的后遗症。、住
+[UITest] 生成结束，用时 9.6 秒，助手消息数 2
+[UITest] 回复内容：指尖在杯沿摩挲了一下，声音压低了些，带着几分不耐烦。 二楼最深处那间，窗户对着钟楼……可别说是空房，那是为了防魔设的“守夜岗”。
 [UITest] 重启后：用户消息 1/1，助手消息 2/2，最后一条回复与重启前一致：true
-[UITest] 重启后继续对话：用时 9.2 秒，助手消息数 3
-[UITest] 重启后回复内容：她眯起眼睛，声音压低，带着几分漫不经心的调侃。、钟楼的封印……要是真松动，今晚下满月那夜，谁还敢躲在里面敲三十二下？除非是那种平时爱开玩笑、
+[UITest] 重启后继续对话：用时 6.5 秒，助手消息数 3
+[UITest] 重启后回复内容：立刻起身走到柜台后，动作快得几乎像只猫一样，单手按住了抽屉的扣条。、压低声音，眼神却死死盯着你： “要开吗？今晚……月光应该已经够
+[UITest] 导入角色卡：位置 On My iPad
+[UITest] 导入角色卡：文件夹 月下酒馆, 2 items
+[UITest] 导入角色卡：文件 uitest-card.json, json, 1:13 AM, 302 bytes
+[UITest] 导入角色卡：侧栏出现「测试旅者」：true
 [UITest] 测试流程结束
-Test Case '-[MoonlitTavernUITests.MoonlitTavernUITests testLocalRoleplayEndToEnd]' passed (124.704 seconds).
+Test Case '-[MoonlitTavernUITests.MoonlitTavernUITests testLocalRoleplayEndToEnd]' passed (145.413 seconds).
 ** TEST SUCCEEDED **

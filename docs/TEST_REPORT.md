@@ -1,6 +1,6 @@
 # 测试报告
 
-版本 0.1.0 · 构建 #14 · 提交 `35aa1c4` · 2026 年 10 月 29 日
+版本 0.1.0 · 构建 #17 · 提交 `ad967c5` · 2026 年 10 月 29 日
 
 完整版（含截图、技术调研、里程碑）见 Release 附带的《月下酒馆 交付与测试报告》。
 
@@ -29,19 +29,19 @@
 
 **已完成并验证**。在 GitHub 托管的 macOS 机器上用 xcodebuild 编译 Release、iphoneos、arm64。Xcode 27.1（iOS 27.1 SDK）与 Xcode 26.6（iOS 26.5 SDK）两个版本都编译成功。
 
-证据：Actions 运行 Build #14（编号 40788450491）；`build-logs.zip` 中的 `xcodebuild.log` 以 `** BUILD SUCCEEDED **` 结束，`environment.log` 记录 Xcode 与 SDK 版本。
+证据：Actions 运行 Build #17（编号 40798530354）；`build-logs.zip` 中的 `xcodebuild.log` 以 `** BUILD SUCCEEDED **` 结束，`environment.log` 记录 Xcode 与 SDK 版本。
 
 ### 3. 是否产生了 IPA 或其他可供签名的构建产物？
 
 **已完成并验证**。产出未签名 IPA，结构检查全部通过：真机平台、arm64、内嵌 llama.framework、未签名、无描述文件。能否安装取决于签名，这一步没有测试。
 
-证据：Releases `build-14` 中的 `MoonlitTavern-unsigned.ipa` 及其 `.sha256`；`build-logs.zip` 中的 `verify-ipa.log`。
+证据：Releases `build-17` 中的 `MoonlitTavern-unsigned.ipa` 及其 `.sha256`；`build-logs.zip` 中的 `verify-ipa.log`。
 
 ### 4. 是否可以导入角色卡？
 
-**已完成并验证**。支持 PNG（读取 chara 与 ccv3 文本块）和 JSON，兼容 Character Card V1、V2、V3 以及 TavernAI 的字段别名；角色卡内嵌的世界书一起导入；导出时未知字段原样保留。解析与导出由单元测试验证；App 里的导入入口（系统文件选择器）没有纳入 UI 自动化测试。
+**已完成并验证**。支持 PNG（读取 chara 与 ccv3 文本块）和 JSON，兼容 Character Card V1、V2、V3 以及 TavernAI 的字段别名；角色卡内嵌的世界书一起导入；导出时未知字段原样保留。解析与导出由单元测试验证；App 里的导入流程也在模拟器测试中走通：从「+ › 导入角色卡」打开系统文档选择器，选中「我的 iPad › 月下酒馆」里的 JSON 角色卡，侧栏随即出现新角色。
 
-证据：`MoonlitCore/CharacterCards/CharacterCardCodec.swift`、`PNGChunks.swift`；`CharacterCardTests`（9 项）与 `Tests/MoonlitCoreTests/Fixtures/` 样例文件。
+证据：`MoonlitCore/CharacterCards/CharacterCardCodec.swift`、`PNGChunks.swift`；`CharacterCardTests`（9 项）与 `Tests/MoonlitCoreTests/Fixtures/` 样例文件；模拟器测试日志中的「导入角色卡」几行与截图「13-导入角色卡后」。
 
 ### 5. 聊天记录能否在重启后保留？
 
@@ -98,8 +98,8 @@
 
 | 构建 | 环境 | 结果 |
 |---|---|---|
-| Build #14 | Xcode 27.1 · Swift 6.4 · iOS 27.1 SDK · Release · iphoneos | 成功，IPA 结构检查通过 |
-| Build #14 兼容构建 | Xcode 26.6 · Swift 6.3.3 · iOS 26.5 SDK | 成功，IPA 结构检查通过 |
+| Build #17 | Xcode 27.1 · Swift 6.4 · iOS 27.1 SDK · Release · iphoneos | 成功，IPA 结构检查通过 |
+| Build #17 兼容构建 | Xcode 26.6 · Swift 6.3.3 · iOS 26.5 SDK | 成功，IPA 结构检查通过 |
 
 IPA 检查（`scripts/verify-ipa.sh`）：iphoneos 平台、arm64、最低系统 17.0、仅 iPad；链接并内嵌 `llama.framework`（含 Metal 后端）；主程序引用 48 个 llama.cpp 接口；未签名、无描述文件。
 
@@ -117,17 +117,18 @@ IPA 检查（`scripts/verify-ipa.sh`）：iphoneos 平台、arm64、最低系统
 
 ## 模拟器端到端测试
 
-iPad Pro 13 英寸（M5）模拟器，真实 App + 真实模型 Qwen3.5-0.8B Q4_K_M，上下文 2048，回复上限 48 token。运行编号 40788449971，TEST SUCCEEDED。截图在 `docs/evidence/screenshots/`。
+iPad Pro 13 英寸（M5）模拟器，真实 App + 真实模型 Qwen3.5-0.8B Q4_K_M，上下文 2048，回复上限 48 token。运行编号 40798529308，TEST SUCCEEDED。截图在 `docs/evidence/screenshots/`。
 
 | 步骤 | 结果 |
 |---|---|
 | 启动 App | 加载示例数据，聊天界面出现，示例存档含开场白 |
 | 设置 › 模型管理 | 识别到测试模型并选中 |
 | 输入并发送「你好，艾琳。今晚还有空房吗？」 | 出现停止按钮，进入生成状态 |
-| 等待回复 | 9.5 秒后收到回复（含首次加载模型）；首 token 1.98 秒，读取 252 token/秒，生成 27.3 token/秒，进程内存 747 MB |
+| 等待回复 | 9.6 秒后收到回复（含首次加载模型）；首 token 2.06 秒，读取 243 token/秒，生成 27.1 token/秒，进程内存 754 MB |
 | 右侧五个面板、角色编辑、群聊存档、竖屏 | 全部正常显示并截图 |
 | 退出 App 再启动 | 用户消息 1/1、助手消息 2/2，最后一条回复文本与重启前完全一致 |
-| 发送「那就要朝钟楼的那间。」 | 9.2 秒后收到新回复（含重新加载模型）；首 token 2.52 秒，生成 50.2 token/秒 |
+| 发送「那就要朝钟楼的那间。」 | 6.5 秒后收到新回复（含重新加载模型）；首 token 2.53 秒，生成 50.3 token/秒 |
+| 「+ › 导入角色卡」，在文档选择器里选中 uitest-card.json | 导入成功，顶部提示「已导入「测试旅者」（V2）」，侧栏出现新角色 |
 
 模拟器里 `os_proc_available_memory()` 返回 0，速度与内存只说明流程跑通。
 

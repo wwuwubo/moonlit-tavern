@@ -62,7 +62,7 @@ Releases 里的 `MoonlitTavern-unsigned.ipa` **没有签名**，需要用全能�
 | iOS 真机构建（Xcode 27.1 · iOS 27.1 SDK；Xcode 26.6 · iOS 26.5 SDK） | 通过 |
 | 未签名 IPA 结构检查 | 通过 |
 | 真实模型引擎测试（macOS，Qwen3-0.6B 8K / Qwen3.5-0.8B 4K） | 22/22 通过 |
-| iPad 模拟器端到端测试（本地推理、重启后保留记录） | 通过 |
+| iPad 模拟器端到端测试（本地推理、重启后保留记录、通过文档选择器导入角色卡） | 通过 |
 | 真机安装与性能 | 未测试（没有真机） |
 
 详细结果与证据见 [docs/TEST_REPORT.md](docs/TEST_REPORT.md)。

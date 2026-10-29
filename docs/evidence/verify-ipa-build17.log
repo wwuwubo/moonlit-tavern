@@ -1,15 +1,15 @@
 ✅ Payload/MoonlitTavern.app 存在
 == 顶层文件 ==
 total 11040
-drwxr-xr-x  9 runner  staff      288 Oct 28 23:36 .
-drwxr-xr-x  3 runner  staff       96 Oct 28 23:36 ..
--rw-r--r--  1 runner  staff    15652 Oct 28 23:36 AppIcon60x60@2x.png
--rw-r--r--  1 runner  staff    21448 Oct 28 23:36 AppIcon76x76@2x~ipad.png
--rw-r--r--  1 runner  staff   208552 Oct 28 23:36 Assets.car
-drwxr-xr-x  3 runner  staff       96 Oct 28 23:36 Frameworks
--rw-r--r--  1 runner  staff     1767 Oct 28 23:36 Info.plist
--rwxr-xr-x  1 runner  staff  5390776 Oct 28 23:36 MoonlitTavern
--rw-r--r--  1 runner  staff        8 Oct 28 23:36 PkgInfo
+drwxr-xr-x  9 runner  staff      288 Oct 29 01:09 .
+drwxr-xr-x  3 runner  staff       96 Oct 29 01:09 ..
+-rw-r--r--  1 runner  staff    15652 Oct 29 01:09 AppIcon60x60@2x.png
+-rw-r--r--  1 runner  staff    21448 Oct 29 01:09 AppIcon76x76@2x~ipad.png
+-rw-r--r--  1 runner  staff   208552 Oct 29 01:09 Assets.car
+drwxr-xr-x  3 runner  staff       96 Oct 29 01:09 Frameworks
+-rw-r--r--  1 runner  staff     1767 Oct 29 01:09 Info.plist
+-rwxr-xr-x  1 runner  staff  5394216 Oct 29 01:09 MoonlitTavern
+-rw-r--r--  1 runner  staff        8 Oct 29 01:09 PkgInfo
 ✅ Info.plist 存在
 == Info.plist 关键字段 ==
 CFBundleIdentifier           com.wuwuyou.moonlittavern 
@@ -51,7 +51,7 @@ Payload/MoonlitTavern.app/MoonlitTavern:
 	/usr/lib/swift/libswiftDispatch.dylib (compatibility version 1.0.0, current version 1605.0.2)
 	/usr/lib/swift/libswiftMetal.dylib (compatibility version 1.0.0, current version 382.5.3, weak)
 	/usr/lib/swift/libswiftOSLog.dylib (compatibility version 1.0.0, current version 10.0.0, weak)
-	/usr/lib/swift/libswiftObjectiveC.dylib (compatibility version 1.0.0, current version 973.1.0, weak)
+	/usr/lib/swift/libswiftObjectiveC.dylib (compatibility version 1.0.0, current version 973.1.0)
 	/usr/lib/swift/libswiftQuartzCore.dylib (compatibility version 1.0.0, current version 5.0.0, weak)
 	/usr/lib/swift/libswiftSpatial.dylib (compatibility version 1.0.0, current version 1.0.0, weak)
 	/usr/lib/swift/libswiftUniformTypeIdentifiers.dylib (compatibility version 1.0.0, current version 919.0.1)
