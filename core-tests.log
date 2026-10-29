@@ -1,0 +1,327 @@
+swift-driver version: 1.168.6 Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)
+Target: arm64-apple-macosx27.0.0
+ProductName:		macOS
+ProductVersion:		27.0.1
+BuildVersion:		26A434
+Building for debugging...
+[Constructing description]
+[Planning deferred tasks]
+[40 / 67] MoonlitCore_MoonlitCoreTests
+[42 / 67]
+[43 / 68] MoonlitCore
+[47 / 106]
+[50 / 106]
+[52 / 106]
+[53 / 106]
+[55 / 106]
+[60 / 106]
+[61 / 106]
+[62 / 106]
+[65 / 106]
+[66 / 106]
+[68 / 106]
+[69 / 106]
+[71 / 106]
+[74 / 106]
+[75 / 106]
+[76 / 106]
+[77 / 106]
+[81 / 106] MoonlitCore
+[89 / 106] MoonlitCore
+[91 / 106] MoonlitCore
+[96 / 107] MoonlitCoreTests-product
+[100 / 146]
+[101 / 146]
+[102 / 146]
+[104 / 146]
+[106 / 146]
+[108 / 146]
+[109 / 146]
+[110 / 146]
+[113 / 146]
+[115 / 146]
+[118 / 146]
+[119 / 146]
+[122 / 146]
+[124 / 146]
+[125 / 146]
+[126 / 146]
+[127 / 146]
+[128 / 146]
+[129 / 146]
+[130 / 146]
+[131 / 146]
+[135 / 146] MoonlitCoreTests-product
+[136 / 146] MoonlitCoreTests-product
+[142 / 146] MoonlitCoreTests-product
+[144 / 146] MoonlitCoreTests-product
+Build complete! (42.49 sec)
+Test Suite 'All tests' started at 2026-10-29 11:15:28.599.
+Test Suite 'MoonlitCoreTests.xctest' started at 2026-10-29 11:15:28.604.
+Test Suite 'CharacterCardTests' started at 2026-10-29 11:15:28.604.
+Test Case '-[MoonlitCoreTests.CharacterCardTests testCRC32KnownValue]' started.
+Test Case '-[MoonlitCoreTests.CharacterCardTests testCRC32KnownValue]' passed (0.003 seconds).
+Test Case '-[MoonlitCoreTests.CharacterCardTests testErrors]' started.
+Test Case '-[MoonlitCoreTests.CharacterCardTests testErrors]' passed (0.002 seconds).
+Test Case '-[MoonlitCoreTests.CharacterCardTests testImportTavernAIAliases]' started.
+Test Case '-[MoonlitCoreTests.CharacterCardTests testImportTavernAIAliases]' passed (0.002 seconds).
+Test Case '-[MoonlitCoreTests.CharacterCardTests testImportV1FlatJSON]' started.
+Test Case '-[MoonlitCoreTests.CharacterCardTests testImportV1FlatJSON]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.CharacterCardTests testImportV2JSONKeepsAllFields]' started.
+Test Case '-[MoonlitCoreTests.CharacterCardTests testImportV2JSONKeepsAllFields]' passed (0.003 seconds).
+Test Case '-[MoonlitCoreTests.CharacterCardTests testImportV3PreservesUnknownFieldsOnReexport]' started.
+Test Case '-[MoonlitCoreTests.CharacterCardTests testImportV3PreservesUnknownFieldsOnReexport]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.CharacterCardTests testPNGRoundTripIsLossless]' started.
+Test Case '-[MoonlitCoreTests.CharacterCardTests testPNGRoundTripIsLossless]' passed (0.075 seconds).
+Test Case '-[MoonlitCoreTests.CharacterCardTests testPNGWithOnlyCharaChunkAndExistingAvatar]' started.
+Test Case '-[MoonlitCoreTests.CharacterCardTests testPNGWithOnlyCharaChunkAndExistingAvatar]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.CharacterCardTests testRewritingReplacesOldCardChunks]' started.
+Test Case '-[MoonlitCoreTests.CharacterCardTests testRewritingReplacesOldCardChunks]' passed (0.105 seconds).
+Test Suite 'CharacterCardTests' passed at 2026-10-29 11:15:28.798.
+	 Executed 9 tests, with 0 failures (0 unexpected) in 0.192 (0.194) seconds
+Test Suite 'ChatTemplateTests' started at 2026-10-29 11:15:28.799.
+Test Case '-[MoonlitCoreTests.ChatTemplateTests testChatMLWithThinkingDisabled]' started.
+Test Case '-[MoonlitCoreTests.ChatTemplateTests testChatMLWithThinkingDisabled]' passed (0.002 seconds).
+Test Case '-[MoonlitCoreTests.ChatTemplateTests testDetect]' started.
+Test Case '-[MoonlitCoreTests.ChatTemplateTests testDetect]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.ChatTemplateTests testGemmaMergesSystemIntoFirstUser]' started.
+Test Case '-[MoonlitCoreTests.ChatTemplateTests testGemmaMergesSystemIntoFirstUser]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.ChatTemplateTests testLlama3AndMistral]' started.
+Test Case '-[MoonlitCoreTests.ChatTemplateTests testLlama3AndMistral]' passed (0.001 seconds).
+Test Suite 'ChatTemplateTests' passed at 2026-10-29 11:15:28.806.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.005 (0.008) seconds
+Test Suite 'ChatTreeTests' started at 2026-10-29 11:15:28.806.
+Test Case '-[MoonlitCoreTests.ChatTreeTests testAppendSiblingsSwitchAndDelete]' started.
+Test Case '-[MoonlitCoreTests.ChatTreeTests testAppendSiblingsSwitchAndDelete]' passed (0.002 seconds).
+Test Case '-[MoonlitCoreTests.ChatTreeTests testEditHideAndFork]' started.
+Test Case '-[MoonlitCoreTests.ChatTreeTests testEditHideAndFork]' passed (0.002 seconds).
+Test Suite 'ChatTreeTests' passed at 2026-10-29 11:15:28.811.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.004 (0.004) seconds
+Test Suite 'GGUFTests' started at 2026-10-29 11:15:28.811.
+Test Case '-[MoonlitCoreTests.GGUFTests testEstimateAndRecommendation]' started.
+Test Case '-[MoonlitCoreTests.GGUFTests testEstimateAndRecommendation]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.GGUFTests testHybridArchitectureCountsOnlyAttentionLayers]' started.
+Test Case '-[MoonlitCoreTests.GGUFTests testHybridArchitectureCountsOnlyAttentionLayers]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.GGUFTests testParseStandardTransformer]' started.
+Test Case '-[MoonlitCoreTests.GGUFTests testParseStandardTransformer]' passed (0.014 seconds).
+Test Case '-[MoonlitCoreTests.GGUFTests testPerLayerKVArray]' started.
+Test Case '-[MoonlitCoreTests.GGUFTests testPerLayerKVArray]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.GGUFTests testRejectsNonGGUF]' started.
+Test Case '-[MoonlitCoreTests.GGUFTests testRejectsNonGGUF]' passed (0.002 seconds).
+Test Suite 'GGUFTests' passed at 2026-10-29 11:15:28.831.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.018 (0.020) seconds
+Test Suite 'GroupDirectorTests' started at 2026-10-29 11:15:28.831.
+Test Case '-[MoonlitCoreTests.GroupDirectorTests testStrategies]' started.
+Test Case '-[MoonlitCoreTests.GroupDirectorTests testStrategies]' passed (0.002 seconds).
+Test Suite 'GroupDirectorTests' passed at 2026-10-29 11:15:28.833.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.002 (0.002) seconds
+Test Suite 'HistoryWindowTests' started at 2026-10-29 11:15:28.833.
+Test Case '-[MoonlitCoreTests.HistoryWindowTests testChooseStart]' started.
+Test Case '-[MoonlitCoreTests.HistoryWindowTests testChooseStart]' passed (0.000 seconds).
+Test Suite 'HistoryWindowTests' passed at 2026-10-29 11:15:28.834.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.000 (0.000) seconds
+Test Suite 'LorebookEngineTests' started at 2026-10-29 11:15:28.834.
+Test Case '-[MoonlitCoreTests.LorebookEngineTests testBudgetDropsLowPriorityFirstAndConstantsWin]' started.
+Test Case '-[MoonlitCoreTests.LorebookEngineTests testBudgetDropsLowPriorityFirstAndConstantsWin]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.LorebookEngineTests testCaseSensitivityAndWholeWords]' started.
+Test Case '-[MoonlitCoreTests.LorebookEngineTests testCaseSensitivityAndWholeWords]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.LorebookEngineTests testConstantAndKeywordActivation]' started.
+Test Case '-[MoonlitCoreTests.LorebookEngineTests testConstantAndKeywordActivation]' passed (0.003 seconds).
+Test Case '-[MoonlitCoreTests.LorebookEngineTests testDelayConditionsAndCharacterFilter]' started.
+Test Case '-[MoonlitCoreTests.LorebookEngineTests testDelayConditionsAndCharacterFilter]' passed (0.002 seconds).
+Test Case '-[MoonlitCoreTests.LorebookEngineTests testDisabledAndEmptyEntriesIgnored]' started.
+Test Case '-[MoonlitCoreTests.LorebookEngineTests testDisabledAndEmptyEntriesIgnored]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.LorebookEngineTests testInclusionGroupKeepsHighestPriority]' started.
+Test Case '-[MoonlitCoreTests.LorebookEngineTests testInclusionGroupKeepsHighestPriority]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.LorebookEngineTests testOutputOrderByPositionThenInsertionOrder]' started.
+Test Case '-[MoonlitCoreTests.LorebookEngineTests testOutputOrderByPositionThenInsertionOrder]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.LorebookEngineTests testProbability]' started.
+Test Case '-[MoonlitCoreTests.LorebookEngineTests testProbability]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.LorebookEngineTests testRecursionAndRecursionFlags]' started.
+Test Case '-[MoonlitCoreTests.LorebookEngineTests testRecursionAndRecursionFlags]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.LorebookEngineTests testRegexKey]' started.
+Test Case '-[MoonlitCoreTests.LorebookEngineTests testRegexKey]' passed (0.005 seconds).
+Test Case '-[MoonlitCoreTests.LorebookEngineTests testScanDepthLimitsHistory]' started.
+Test Case '-[MoonlitCoreTests.LorebookEngineTests testScanDepthLimitsHistory]' passed (0.002 seconds).
+Test Case '-[MoonlitCoreTests.LorebookEngineTests testSelectiveLogic]' started.
+Test Case '-[MoonlitCoreTests.LorebookEngineTests testSelectiveLogic]' passed (0.002 seconds).
+Test Case '-[MoonlitCoreTests.LorebookEngineTests testStickyAndCooldownStateMachine]' started.
+Test Case '-[MoonlitCoreTests.LorebookEngineTests testStickyAndCooldownStateMachine]' passed (0.001 seconds).
+Test Suite 'LorebookEngineTests' passed at 2026-10-29 11:15:28.856.
+	 Executed 13 tests, with 0 failures (0 unexpected) in 0.019 (0.022) seconds
+Test Suite 'MacroTests' started at 2026-10-29 11:15:28.856.
+Test Case '-[MoonlitCoreTests.MacroTests testExpand]' started.
+Test Case '-[MoonlitCoreTests.MacroTests testExpand]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.MacroTests testHeuristicCounter]' started.
+Test Case '-[MoonlitCoreTests.MacroTests testHeuristicCounter]' passed (0.001 seconds).
+Test Suite 'MacroTests' passed at 2026-10-29 11:15:28.858.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.002 (0.003) seconds
+Test Suite 'MarkdownTests' started at 2026-10-29 11:15:28.858.
+Test Case '-[MoonlitCoreTests.MarkdownTests testBlocks]' started.
+Test Case '-[MoonlitCoreTests.MarkdownTests testBlocks]' passed (0.002 seconds).
+Test Suite 'MarkdownTests' passed at 2026-10-29 11:15:28.860.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.002 (0.002) seconds
+Test Suite 'MemoryTests' started at 2026-10-29 11:15:28.861.
+Test Case '-[MoonlitCoreTests.MemoryTests testExampleEchoIsDropped]' started.
+Test Case '-[MoonlitCoreTests.MemoryTests testExampleEchoIsDropped]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.MemoryTests testKeywordExtractor]' started.
+Test Case '-[MoonlitCoreTests.MemoryTests testKeywordExtractor]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.MemoryTests testMergeRelationshipsKeepsLatest]' started.
+Test Case '-[MoonlitCoreTests.MemoryTests testMergeRelationshipsKeepsLatest]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.MemoryTests testPlaceholderEchoIsIgnored]' started.
+Test Case '-[MoonlitCoreTests.MemoryTests testPlaceholderEchoIsIgnored]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.MemoryTests testRetrieverPrioritiesAndBudget]' started.
+Test Case '-[MoonlitCoreTests.MemoryTests testRetrieverPrioritiesAndBudget]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.MemoryTests testSummaryParserStandardFormat]' started.
+Test Case '-[MoonlitCoreTests.MemoryTests testSummaryParserStandardFormat]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.MemoryTests testSummaryParserTolerance]' started.
+Test Case '-[MoonlitCoreTests.MemoryTests testSummaryParserTolerance]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.MemoryTests testSummaryPromptContainsTranscript]' started.
+Test Case '-[MoonlitCoreTests.MemoryTests testSummaryPromptContainsTranscript]' passed (0.000 seconds).
+Test Suite 'MemoryTests' passed at 2026-10-29 11:15:28.866.
+	 Executed 8 tests, with 0 failures (0 unexpected) in 0.004 (0.005) seconds
+Test Suite 'OpenAICompatibleTests' started at 2026-10-29 11:15:28.866.
+Test Case '-[MoonlitCoreTests.OpenAICompatibleTests testErrorMessageNeverEchoesHeaders]' started.
+Test Case '-[MoonlitCoreTests.OpenAICompatibleTests testErrorMessageNeverEchoesHeaders]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.OpenAICompatibleTests testRequestBody]' started.
+Test Case '-[MoonlitCoreTests.OpenAICompatibleTests testRequestBody]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.OpenAICompatibleTests testSSEParser]' started.
+Test Case '-[MoonlitCoreTests.OpenAICompatibleTests testSSEParser]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.OpenAICompatibleTests testURL]' started.
+Test Case '-[MoonlitCoreTests.OpenAICompatibleTests testURL]' passed (0.000 seconds).
+Test Suite 'OpenAICompatibleTests' passed at 2026-10-29 11:15:28.868.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.002 (0.002) seconds
+Test Suite 'PersistenceTests' started at 2026-10-29 11:15:28.868.
+Test Case '-[MoonlitCoreTests.PersistenceTests testBackupPathTraversalIsNeutralized]' started.
+Test Case '-[MoonlitCoreTests.PersistenceTests testBackupPathTraversalIsNeutralized]' passed (0.004 seconds).
+Test Case '-[MoonlitCoreTests.PersistenceTests testCorruptedFileIsSkipped]' started.
+Test Case '-[MoonlitCoreTests.PersistenceTests testCorruptedFileIsSkipped]' passed (0.011 seconds).
+Test Case '-[MoonlitCoreTests.PersistenceTests testSampleDataIsMarked]' started.
+Test Case '-[MoonlitCoreTests.PersistenceTests testSampleDataIsMarked]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.PersistenceTests testSettingsDecodeWithMissingFields]' started.
+Test Case '-[MoonlitCoreTests.PersistenceTests testSettingsDecodeWithMissingFields]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.PersistenceTests testStoreRoundTripAndBackup]' started.
+Test Case '-[MoonlitCoreTests.PersistenceTests testStoreRoundTripAndBackup]' passed (0.026 seconds).
+Test Suite 'PersistenceTests' passed at 2026-10-29 11:15:28.912.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.042 (0.043) seconds
+Test Suite 'PersonaAndContinuationTests' started at 2026-10-29 11:15:28.912.
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testContinuationForCloudAddsAssistantMessageAndInstruction]' started.
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testContinuationForCloudAddsAssistantMessageAndInstruction]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testContinuationJoinsText]' started.
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testContinuationJoinsText]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testContinuationPrefillsExistingTextForLocalModels]' started.
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testContinuationPrefillsExistingTextForLocalModels]' passed (0.002 seconds).
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testContinueMessageUpdatesInPlace]' started.
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testContinueMessageUpdatesInPlace]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testDefaultsForLongerRepliesAndContext]' started.
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testDefaultsForLongerRepliesAndContext]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testDetailsBecomeCollapsibleBlock]' started.
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testDetailsBecomeCollapsibleBlock]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testEndsMidSentence]' started.
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testEndsMidSentence]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testExplicitGenderWinsOverDescription]' started.
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testExplicitGenderWinsOverDescription]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testGenderDetection]' started.
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testGenderDetection]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testGenderGoesIntoPersonaBlockAndReminderBeforeReply]' started.
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testGenderGoesIntoPersonaBlockAndReminderBeforeReply]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testGenderWithoutDescriptionStillWritten]' started.
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testGenderWithoutDescriptionStillWritten]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testLengthReminderFollowsSetting]' started.
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testLengthReminderFollowsSetting]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testNoReminderWhenGenderUnknown]' started.
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testNoReminderWhenGenderUnknown]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testOldSamplingSettingsGetDryDefaults]' started.
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testOldSamplingSettingsGetDryDefaults]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testPersonaGenderRoundTripAndOldDataDecodes]' started.
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testPersonaGenderRoundTripAndOldDataDecodes]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testReplyLengthTargetsAndFloor]' started.
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testReplyLengthTargetsAndFloor]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testReplyReminderCanBeTurnedOffAndSkipsWhenNotAnsweringUser]' started.
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testReplyReminderCanBeTurnedOffAndSkipsWhenNotAnsweringUser]' passed (0.003 seconds).
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testStreamingSplitKeepsBlocksIdentical]' started.
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testStreamingSplitKeepsBlocksIdentical]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testStripTagsKeepsTextAndCode]' started.
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testStripTagsKeepsTextAndCode]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testUnclosedDetailsRunsToEnd]' started.
+Test Case '-[MoonlitCoreTests.PersonaAndContinuationTests testUnclosedDetailsRunsToEnd]' passed (0.000 seconds).
+Test Suite 'PersonaAndContinuationTests' passed at 2026-10-29 11:15:28.930.
+	 Executed 20 tests, with 0 failures (0 unexpected) in 0.015 (0.018) seconds
+Test Suite 'PromptBuilderTests' started at 2026-10-29 11:15:28.930.
+Test Case '-[MoonlitCoreTests.PromptBuilderTests testCharacterSystemPromptWithOriginalMacro]' started.
+Test Case '-[MoonlitCoreTests.PromptBuilderTests testCharacterSystemPromptWithOriginalMacro]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.PromptBuilderTests testDepthInjectionsAndHiddenMessages]' started.
+Test Case '-[MoonlitCoreTests.PromptBuilderTests testDepthInjectionsAndHiddenMessages]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.PromptBuilderTests testExamplesDroppedBeforeHistory]' started.
+Test Case '-[MoonlitCoreTests.PromptBuilderTests testExamplesDroppedBeforeHistory]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.PromptBuilderTests testGroupChatIdentityIsolation]' started.
+Test Case '-[MoonlitCoreTests.PromptBuilderTests testGroupChatIdentityIsolation]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.PromptBuilderTests testHistoryTruncationAnchorIsStable]' started.
+Test Case '-[MoonlitCoreTests.PromptBuilderTests testHistoryTruncationAnchorIsStable]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.PromptBuilderTests testLoreStateAdvancesInPlan]' started.
+Test Case '-[MoonlitCoreTests.PromptBuilderTests testLoreStateAdvancesInPlan]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.PromptBuilderTests testSectionOrderAndMacros]' started.
+Test Case '-[MoonlitCoreTests.PromptBuilderTests testSectionOrderAndMacros]' passed (0.001 seconds).
+Test Suite 'PromptBuilderTests' passed at 2026-10-29 11:15:28.936.
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.005 (0.006) seconds
+Test Suite 'ReplySuggestionTests' started at 2026-10-29 11:15:28.936.
+Test Case '-[MoonlitCoreTests.ReplySuggestionTests testOldSettingsDecodeWithSuggestionDefaults]' started.
+Test Case '-[MoonlitCoreTests.ReplySuggestionTests testOldSettingsDecodeWithSuggestionDefaults]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.ReplySuggestionTests testParseEmptyOutput]' started.
+Test Case '-[MoonlitCoreTests.ReplySuggestionTests testParseEmptyOutput]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.ReplySuggestionTests testParseNumberedList]' started.
+Test Case '-[MoonlitCoreTests.ReplySuggestionTests testParseNumberedList]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.ReplySuggestionTests testParseToleratesMessyOutput]' started.
+Test Case '-[MoonlitCoreTests.ReplySuggestionTests testParseToleratesMessyOutput]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.ReplySuggestionTests testRequestReusesReplyPromptPrefix]' started.
+Test Case '-[MoonlitCoreTests.ReplySuggestionTests testRequestReusesReplyPromptPrefix]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.ReplySuggestionTests testSuggestionsSurviveRoundTripAndEditClearsThem]' started.
+Test Case '-[MoonlitCoreTests.ReplySuggestionTests testSuggestionsSurviveRoundTripAndEditClearsThem]' passed (0.000 seconds).
+Test Suite 'ReplySuggestionTests' passed at 2026-10-29 11:15:28.939.
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.002 (0.003) seconds
+Test Suite 'StreamingTests' started at 2026-10-29 11:15:28.939.
+Test Case '-[MoonlitCoreTests.StreamingTests testFinalizerKeepsVisibleTextWhenCleaningEmptiesIt]' started.
+Test Case '-[MoonlitCoreTests.StreamingTests testFinalizerKeepsVisibleTextWhenCleaningEmptiesIt]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.StreamingTests testHeldTextReleasedWhenNotStop]' started.
+Test Case '-[MoonlitCoreTests.StreamingTests testHeldTextReleasedWhenNotStop]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.StreamingTests testLeadingWhitespaceBeforeThinkBlock]' started.
+Test Case '-[MoonlitCoreTests.StreamingTests testLeadingWhitespaceBeforeThinkBlock]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.StreamingTests testLoneClosingTagKeepsPrecedingText]' started.
+Test Case '-[MoonlitCoreTests.StreamingTests testLoneClosingTagKeepsPrecedingText]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.StreamingTests testLongReplyStreamsCompletely]' started.
+Test Case '-[MoonlitCoreTests.StreamingTests testLongReplyStreamsCompletely]' passed (0.028 seconds).
+Test Case '-[MoonlitCoreTests.StreamingTests testSanitizer]' started.
+Test Case '-[MoonlitCoreTests.StreamingTests testSanitizer]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.StreamingTests testStartsInsideThinkingWhenTemplateOpenedIt]' started.
+Test Case '-[MoonlitCoreTests.StreamingTests testStartsInsideThinkingWhenTemplateOpenedIt]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.StreamingTests testStopSequenceAcrossChunks]' started.
+Test Case '-[MoonlitCoreTests.StreamingTests testStopSequenceAcrossChunks]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.StreamingTests testThinkingHidden]' started.
+Test Case '-[MoonlitCoreTests.StreamingTests testThinkingHidden]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.StreamingTests testThinkTagInMiddleDoesNotHideRest]' started.
+Test Case '-[MoonlitCoreTests.StreamingTests testThinkTagInMiddleDoesNotHideRest]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.StreamingTests testUnclosedThinkingIsReleasedAsText]' started.
+Test Case '-[MoonlitCoreTests.StreamingTests testUnclosedThinkingIsReleasedAsText]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.StreamingTests testUTF8AccumulatorHandlesSplitCharacters]' started.
+Test Case '-[MoonlitCoreTests.StreamingTests testUTF8AccumulatorHandlesSplitCharacters]' passed (0.000 seconds).
+Test Suite 'StreamingTests' passed at 2026-10-29 11:15:28.972.
+	 Executed 12 tests, with 0 failures (0 unexpected) in 0.031 (0.033) seconds
+Test Suite 'WorldInfoFormatTests' started at 2026-10-29 11:15:28.972.
+Test Case '-[MoonlitCoreTests.WorldInfoFormatTests testCharacterBookRoundTripKeepsMoonlitFields]' started.
+Test Case '-[MoonlitCoreTests.WorldInfoFormatTests testCharacterBookRoundTripKeepsMoonlitFields]' passed (0.000 seconds).
+Test Case '-[MoonlitCoreTests.WorldInfoFormatTests testImportSillyTavernWorld]' started.
+Test Case '-[MoonlitCoreTests.WorldInfoFormatTests testImportSillyTavernWorld]' passed (0.002 seconds).
+Test Case '-[MoonlitCoreTests.WorldInfoFormatTests testMoonlitNativeFormatImport]' started.
+Test Case '-[MoonlitCoreTests.WorldInfoFormatTests testMoonlitNativeFormatImport]' passed (0.001 seconds).
+Test Case '-[MoonlitCoreTests.WorldInfoFormatTests testSillyTavernExportRoundTrip]' started.
+Test Case '-[MoonlitCoreTests.WorldInfoFormatTests testSillyTavernExportRoundTrip]' passed (0.002 seconds).
+Test Suite 'WorldInfoFormatTests' passed at 2026-10-29 11:15:28.977.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.004 (0.005) seconds
+Test Suite 'MoonlitCoreTests.xctest' passed at 2026-10-29 11:15:28.977.
+	 Executed 104 tests, with 0 failures (0 unexpected) in 0.349 (0.373) seconds
+Test Suite 'All tests' passed at 2026-10-29 11:15:28.977.
+	 Executed 104 tests, with 0 failures (0 unexpected) in 0.349 (0.378) seconds
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
