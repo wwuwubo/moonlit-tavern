@@ -66,7 +66,11 @@ final class MoonlitTavernUITests: XCTestCase {
                     let queries = prefix ? [app.cells] : [app.cells, app.staticTexts, app.buttons]
                     for query in queries {
                         let e = query.matching(NSPredicate(format: format, label)).firstMatch
-                        if e.exists && e.isHittable { e.tap(); return e.label }
+                        if e.exists && e.isHittable {
+                            let found = e.label   // 点击后界面会跳转，先记下标签
+                            e.tap()
+                            return found
+                        }
                     }
                 }
                 sleep(1)
