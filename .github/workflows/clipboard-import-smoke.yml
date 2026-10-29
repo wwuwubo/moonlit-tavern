@@ -1,0 +1,48 @@
+name: Clipboard JSON Import Smoke
+
+on:
+  push:
+    branches:
+      - fix/clipboard-json-import-20261029
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  core-tests:
+    name: Character card parser unit tests
+    runs-on: xcode-27
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - run: cd Packages/MoonlitCore && swift test
+
+  simulator-import:
+    name: iPad simulator JSON paste import
+    runs-on: xcode-27
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Cache llama.cpp simulator framework
+        uses: actions/cache@v4
+        with:
+          path: build/llama-sim
+          key: llama-sim-b11960-arm64
+      - name: Run focused paste-import UI test
+        env:
+          MOONLIT_SMOKE_TEST: "1"
+          LLAMA_TAG: b11960
+        run: scripts/run-simulator-test.sh https://example.com/unused.gguf
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: clipboard-import-test-diagnostics
+          path: |
+            logs/uitest.log
+            logs/screenshots/
+            logs/simulators.txt
+          if-no-files-found: ignore
