@@ -28,10 +28,16 @@ done
 TMP="$(mktemp -d)"
 cp -R "$LOGS/." "$TMP/"
 cd "$TMP"
+# 测试失败时 xcresult 会附带整段录屏，超过 GitHub 单文件 100 MB 的上限会让整次推送失败
+find . -type f -size +40M -print | while IFS= read -r big; do
+  echo "${big#./}（$(du -h "$big" | cut -f1)）" >> skipped-large-files.txt
+  rm -f "$big"
+done
+[[ -f skipped-large-files.txt ]] && { echo "以下大文件没有推送："; cat skipped-large-files.txt; }
 git init -q
 git checkout -q --orphan "ci-logs/${LABEL}"
 git add -A
 git -c user.name="ci" -c user.email="ci@users.noreply.github.com" commit -qm "构建日志 #${GITHUB_RUN_NUMBER:-} ${LABEL}"
 git push -q --force "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/ci-logs/${LABEL}" \
-  && echo "日志已推送到分支 ci-logs/${LABEL}" || echo "日志推送失败（不影响构建结果）"
+  && echo "日志已推送到分支 ci-logs/${LABEL}" || echo "::warning::日志推送到 ci-logs/${LABEL} 失败（不影响构建结果）"
 exit 0

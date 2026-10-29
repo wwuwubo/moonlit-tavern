@@ -52,13 +52,22 @@ extension AppState {
             let count = settings.suggestions.count
             let request = ReplySuggestions.request(plan: plan, userName: userName, characterNames: names,
                                                    count: count, sampling: settings.sampling)
-            var output = ""
-            for try await event in engine.generate(request) {
-                if case .text(let delta) = event { output += delta }
+            // 小模型偶尔只写出一个能用的选项（其余跑题、重复或写成了角色的话），这时自动再要一次，合并去重
+            var options: [String] = []
+            let enough = min(2, count)
+            for attempt in 1...2 {
+                var output = ""
+                for try await event in engine.generate(request) {
+                    if case .text(let delta) = event { output += delta }
+                }
+                try Task.checkCancellation()
+                let parsed = ReplySuggestions.parse(output, userName: userName, characterNames: names, limit: count)
+                for option in parsed where options.count < count && !options.contains(option) {
+                    options.append(option)
+                }
+                EngineLog.shared.append("剧情选项：第 \(attempt) 次，模型输出 \(output.count) 字，整理出 \(parsed.count) 个，累计 \(options.count) 个")
+                if options.count >= enough { break }
             }
-            try Task.checkCancellation()
-            let options = ReplySuggestions.parse(output, userName: userName, characterNames: names, limit: count)
-            EngineLog.shared.append("剧情选项：模型输出 \(output.count) 字，整理出 \(options.count) 个")
             guard !options.isEmpty else {
                 if job.manual { show(.warning, "这次没能整理出剧情选项，可以再点一次「换一组」，或者直接输入。") }
                 return

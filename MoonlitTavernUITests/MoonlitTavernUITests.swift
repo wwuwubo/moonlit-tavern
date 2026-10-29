@@ -91,7 +91,8 @@ final class MoonlitTavernUITests: XCTestCase {
         let item = element(app, "importCardMenuItem")
         guard item.waitForExistence(timeout: 5) else { log("导入：菜单里没有导入项"); return false }
         item.tap()
-        return element(app, "pickCardFileButton").waitForExistence(timeout: 10)
+        // 导入页最上面的按钮；下面的按钮可能在屏幕外，列表还没创建它们
+        return element(app, "readCardClipboardButton").waitForExistence(timeout: 10)
     }
 
     /// 从「我的 iPad › 月下酒馆 › 角色卡」文件夹列表导入（不经过系统文件选择器）。
