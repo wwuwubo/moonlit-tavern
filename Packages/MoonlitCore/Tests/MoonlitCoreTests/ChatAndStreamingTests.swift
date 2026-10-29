@@ -115,6 +115,35 @@ final class StreamingTests: XCTestCase {
     }
 }
 
+final class SuggestedActionTests: XCTestCase {
+    func testParsesFourDistinctContextActions() {
+        let raw = """
+        1. 询问掌门关于灵网的秘密
+        2、检查古老的封印阵法
+        3. 沿着山道寻找失踪的弟子
+        4. 留在道院研究玉简
+        """
+        XCTAssertEqual(ActionSuggestionParser.parse(raw), [
+            "询问掌门关于灵网的秘密", "检查古老的封印阵法",
+            "沿着山道寻找失踪的弟子", "留在道院研究玉简"
+        ])
+    }
+
+    func testIgnoreInvalidAndDuplicateOptions() {
+        let raw = """
+        你可以考虑这些行动：
+        1. 询问线索
+        2. 询问线索
+        - 观察四周
+        3. \(String(repeating: "长", count: 81))
+        4. 返回山门
+        """
+        XCTAssertEqual(ActionSuggestionParser.parse(raw), [
+            "询问线索", "观察四周", "返回山门"
+        ])
+    }
+}
+
 final class GroupDirectorTests: XCTestCase {
     func testStrategies() {
         let a = TavernCharacter(name: "艾琳", talkativeness: 0.9)
