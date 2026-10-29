@@ -7,12 +7,25 @@ struct MessageContentView: View {
     var isUser = false
 
     var body: some View {
+        MarkdownBlocksView(blocks: MarkdownParser.blocks(text))
+            .textSelection(.enabled)
+    }
+
+    static func styled(_ source: String) -> AttributedString {
+        MarkdownBlocksView.styled(source)
+    }
+}
+
+/// 一组 Markdown 块。折叠段（状态栏等）里再套一组，所以单独成一个视图类型，可以递归。
+struct MarkdownBlocksView: View {
+    let blocks: [MarkdownBlock]
+
+    var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            ForEach(Array(MarkdownParser.blocks(text).enumerated()), id: \.offset) { _, block in
+            ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
                 blockView(block)
             }
         }
-        .textSelection(.enabled)
     }
 
     @ViewBuilder
@@ -43,6 +56,18 @@ struct MessageContentView: View {
             .background(RoundedRectangle(cornerRadius: 8).fill(Color.black.opacity(0.35)))
         case .divider:
             Divider().overlay(Theme.hairline)
+        case .details(let summary, let inner):
+            DisclosureGroup {
+                MarkdownBlocksView(blocks: inner)
+                    .padding(.top, 6)
+            } label: {
+                Text(summary)
+                    .font(.callout.weight(.medium))
+                    .foregroundStyle(Theme.amber)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(RoundedRectangle(cornerRadius: 10).fill(Color.black.opacity(0.22)))
         }
     }
 

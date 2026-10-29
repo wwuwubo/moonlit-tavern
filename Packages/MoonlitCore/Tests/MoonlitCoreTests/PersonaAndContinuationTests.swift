@@ -43,6 +43,7 @@ final class PersonaAndContinuationTests: XCTestCase {
         XCTAssertTrue(system.contains("【旅人（用户）】\n性别：男\n镇上的男性铁匠"), system)
         let last = p.messages.last
         XCTAssertEqual(last?.role, .system, "提醒放在最后，紧挨着回复")
+        XCTAssertTrue(last?.content.contains("接着旅人最后说的话") == true, "最后一条是用户的话时，提醒模型回应它")
         XCTAssertTrue(last?.content.contains("旅人是男性") == true)
         XCTAssertTrue(last?.content.contains("「他」") == true)
         XCTAssertEqual(p.tailCount, 1, "提醒算末尾指令，剧情选项请求会把它去掉")
@@ -53,6 +54,34 @@ final class PersonaAndContinuationTests: XCTestCase {
         XCTAssertEqual(p.tailCount, 0)
         XCTAssertFalse(p.messages.contains { $0.content.contains("称呼和代词") })
         XCTAssertFalse(p.messages.first?.content.contains("性别：") == true)
+    }
+
+    func testReplyReminderCanBeTurnedOffAndSkipsWhenNotAnsweringUser() {
+        let user = [ChatMessage(role: .user, speakerName: "旅人", content: "还有空房吗？")]
+        let on = plan(persona: UserPersona(name: "旅人"), history: user)
+        XCTAssertEqual(on.tailCount, 1)
+        XCTAssertTrue(on.messages.last?.content.contains("接着旅人最后说的话") == true)
+
+        let erin = TavernCharacter(name: "艾琳", description: "老板娘", postHistoryInstructions: "保持艾琳的口吻。")
+        var chat = ChatSession(title: "t", characterIDs: [erin.id])
+        chat.append(ChatMessage(role: .user, speakerName: "旅人", content: "还有空房吗？"))
+        var settings = AppSettings()
+        func build() -> PromptPlan {
+            PromptBuilder().build(PromptContext(
+                characters: [erin], speaker: erin, persona: UserPersona(name: "旅人"), settings: settings,
+                session: chat, lorebooks: [], memory: nil, contextLength: 4096, maxNewTokens: 200,
+                tokenCounter: HeuristicTokenCounter()))
+        }
+        let withCard = build()
+        XCTAssertEqual(withCard.tailCount, 2)
+        XCTAssertEqual(withCard.messages.last?.content, "保持艾琳的口吻。", "角色卡的历史后指令仍在最后")
+        settings.replyReminder = false
+        XCTAssertEqual(build().tailCount, 1, "关掉后只剩角色卡的指令")
+
+        let afterGreeting = plan(persona: UserPersona(name: "旅人"))
+        XCTAssertEqual(afterGreeting.tailCount, 0, "最后一条是角色的话（开场白、群聊里接话）时不加")
+        let old = try? JSONDecoder().decode(AppSettings.self, from: Data(#"{"loreTokenBudget": 500}"#.utf8))
+        XCTAssertEqual(old?.replyReminder, true)
     }
 
     func testGenderWithoutDescriptionStillWritten() {
@@ -135,5 +164,32 @@ final class PersonaAndContinuationTests: XCTestCase {
         XCTAssertNil(chat.message(reply.id)?.editedAt, "续写不算用户编辑")
         XCTAssertEqual(chat.siblingPosition(of: reply.id).count, 1, "不产生新版本")
         XCTAssertEqual(chat.activePath().count, 2)
+    }
+
+    // MARK: - 消息里的 HTML
+
+    func testDetailsBecomeCollapsibleBlock() {
+        let text = "<StatusBlocks>\n<details>\n<summary> 查看状态栏 </Summary>\n<p>\n**环境**\n- 时间：清晨\n</p>\n</details>\n</StatusBlocks>\n*她推开门。*"
+        let blocks = MarkdownParser.blocks(text)
+        XCTAssertEqual(blocks.count, 2, "\(blocks)")
+        guard case .details(let summary, let inner) = blocks[0] else { return XCTFail("\(blocks)") }
+        XCTAssertEqual(summary, "查看状态栏")
+        XCTAssertEqual(inner, [.paragraph("**环境**"), .listItem(ordered: false, marker: "•", text: "时间：清晨")])
+        XCTAssertEqual(blocks[1], .paragraph("*她推开门。*"))
+    }
+
+    func testUnclosedDetailsRunsToEnd() {
+        let blocks = MarkdownParser.blocks("开头\n<details><summary>状态</summary>生成到一半")
+        XCTAssertEqual(blocks.first, .paragraph("开头"))
+        XCTAssertEqual(blocks.last, .details(summary: "状态", blocks: [.paragraph("生成到一半")]))
+    }
+
+    func testStripTagsKeepsTextAndCode() {
+        XCTAssertEqual(HTMLLite.stripTags("第一行<br>第二行<br/>第三行"), "第一行\n第二行\n第三行")
+        XCTAssertEqual(HTMLLite.stripTags("<span style=\"color:red\">红字</span>"), "红字")
+        XCTAssertEqual(HTMLLite.stripTags("<系统提示>不是英文标签"), "<系统提示>不是英文标签")
+        XCTAssertEqual(HTMLLite.stripTags("a < b，3<5"), "a < b，3<5")
+        XCTAssertEqual(HTMLLite.stripTags("```\n<div>代码</div>\n```"), "```\n<div>代码</div>\n```")
+        XCTAssertEqual(MarkdownParser.blocks("没有标签的普通段落"), [.paragraph("没有标签的普通段落")])
     }
 }

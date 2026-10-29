@@ -171,8 +171,20 @@ public struct PromptBuilder {
         var fixedTokens = counter.count(systemCore) + overhead
         report.systemTokens = fixedTokens - lore.tokensUsed
 
-        // post-history 与群聊发言提示
+        // 末尾指令：回复前提醒（接着用户的话写、用户性别）→ 角色卡的历史后指令 → 群聊发言提示
         var tailMessages: [PromptMessage] = []
+        // 设定只写在开头时，小模型聊几轮就会忘了用户刚说了什么、用户是男是女，或者被角色卡里的写法带偏；
+        // 放在紧挨回复的位置提醒一句
+        var reminders: [String] = []
+        if ctx.settings.replyReminder, path.last?.role == .user {
+            reminders.append("接着\(ctx.persona.name)最后说的话和行动往下写：先回应它，再推进剧情，不要复述开场白或前面写过的段落。")
+        }
+        if let personaGender {
+            reminders.append("\(ctx.persona.name)是\(personaGender.noun)，称呼和代词用「\(personaGender.pronoun)」。")
+        }
+        if !reminders.isEmpty {
+            tailMessages.append(PromptMessage(role: .system, content: "（" + reminders.joined() + "）"))
+        }
         if !speaker.postHistoryInstructions.isBlank {
             tailMessages.append(PromptMessage(role: .system, content: macro.expand(speaker.postHistoryInstructions).trimmed))
         }
@@ -181,13 +193,6 @@ public struct PromptBuilder {
             tailMessages.append(PromptMessage(
                 role: .system,
                 content: "现在轮到\(speaker.name)发言。只写\(speaker.name)的台词、动作和心理，不要替\(others.joined(separator: "、"))说话或行动。"
-            ))
-        }
-        // 用户性别放在最靠近回复的位置：设定写在开头时，小模型聊几轮就会忘，或者被角色卡里的写法带偏
-        if let personaGender {
-            tailMessages.append(PromptMessage(
-                role: .system,
-                content: "（\(ctx.persona.name)是\(personaGender.noun)，称呼和代词用「\(personaGender.pronoun)」。）"
             ))
         }
         let tailTokens = tailMessages.reduce(0) { $0 + counter.count($1.content) + overhead }

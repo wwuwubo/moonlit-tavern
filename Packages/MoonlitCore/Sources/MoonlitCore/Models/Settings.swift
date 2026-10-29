@@ -215,6 +215,8 @@ public struct AppSettings: Codable, Hashable, Sendable {
     public var includeExampleDialogue: Bool
     /// 剧情选项
     public var suggestions: SuggestionSettings
+    /// 回复前提醒模型：接着用户最后说的话往下写，不要复述前文。小模型聊几轮后容易自说自话
+    public var replyReminder: Bool
 
     public init(
         providerMode: ProviderMode = .local,
@@ -227,7 +229,8 @@ public struct AppSettings: Codable, Hashable, Sendable {
         memory: MemorySettings = MemorySettings(),
         loreTokenBudget: Int = 900,
         includeExampleDialogue: Bool = true,
-        suggestions: SuggestionSettings = SuggestionSettings()
+        suggestions: SuggestionSettings = SuggestionSettings(),
+        replyReminder: Bool = true
     ) {
         self.providerMode = providerMode
         self.local = local
@@ -240,6 +243,7 @@ public struct AppSettings: Codable, Hashable, Sendable {
         self.loreTokenBudget = loreTokenBudget
         self.includeExampleDialogue = includeExampleDialogue
         self.suggestions = suggestions
+        self.replyReminder = replyReminder
     }
 
     /// 实际使用的回复长度。
@@ -259,7 +263,7 @@ public struct AppSettings: Codable, Hashable, Sendable {
 
     enum CodingKeys: String, CodingKey {
         case providerMode, local, cloud, sampling, replyLength, persona, defaultSystemPrompt, memory
-        case loreTokenBudget, includeExampleDialogue, suggestions
+        case loreTokenBudget, includeExampleDialogue, suggestions, replyReminder
     }
 
     public init(from decoder: Decoder) throws {
@@ -275,5 +279,6 @@ public struct AppSettings: Codable, Hashable, Sendable {
         loreTokenBudget = try c.decodeIfPresent(Int.self, forKey: .loreTokenBudget) ?? 900
         includeExampleDialogue = try c.decodeIfPresent(Bool.self, forKey: .includeExampleDialogue) ?? true
         suggestions = try c.decodeIfPresent(SuggestionSettings.self, forKey: .suggestions) ?? SuggestionSettings()
+        replyReminder = try c.decodeIfPresent(Bool.self, forKey: .replyReminder) ?? true
     }
 }
