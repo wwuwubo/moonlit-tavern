@@ -127,6 +127,25 @@ final class MoonlitTavernUITests: XCTestCase {
         save("clipboard-json-card-imported", app)
     }
 
+    /// 即使模型尚未加载，也必须允许用户自由输入、刷新或选择后续行动。
+    func testActionChoicesPanelAndManualInput() throws {
+        let app = XCUIApplication()
+        app.launchEnvironment["MOONLIT_UITEST"] = "1"
+        app.launchEnvironment["MOONLIT_UITEST_RUN"] = UUID().uuidString
+        XCUIDevice.shared.orientation = .landscapeLeft
+        app.launch()
+        let panel = element(app, "actionChoicesPanel")
+        XCTAssertTrue(panel.waitForExistence(timeout: 20), "角色开场白下没有剧情选项区域")
+        let refresh = element(app, "refreshActionChoices")
+        XCTAssertTrue(refresh.exists, "缺少独立的生成或刷新剧情选项按钮")
+        let manual = element(app, "manualActionInput")
+        XCTAssertTrue(manual.exists, "缺少自由输入入口")
+        manual.tap()
+        let composer = element(app, "composer")
+        XCTAssertTrue(composer.exists, "自由输入入口没有正常输入框")
+        save("story-options-manual-input", app)
+    }
+
     func testLocalRoleplayEndToEnd() throws {
         let app = XCUIApplication()
         app.launchEnvironment["MOONLIT_UITEST"] = "1"
