@@ -155,7 +155,7 @@ extension AppState {
                         generation?.phase = phase
                         generation?.progress = value
                     case .text(let delta):
-                        generation?.text += delta
+                        stream.append(delta)
                     case .finished(let stats):
                         finalStats = stats
                     }
@@ -170,7 +170,7 @@ extension AppState {
             }
             if Task.isCancelled || finalStats?.stopReason == "用户停止" { cancelled = true }
 
-            let visible = generation?.text ?? ""
+            let visible = stream.text
             let outcome = ReplyFinalizer.finalize(visible: visible, speakerName: speaker.name)
             let stopReason = streamError.map { "出错" + ($0.localizedDescription.isEmpty ? "" : "：\($0.localizedDescription)") }
                 ?? (cancelled ? "用户停止" : (finalStats?.stopReason ?? "未知"))
@@ -243,7 +243,7 @@ extension AppState {
                         generation?.phase = phase
                         generation?.progress = value
                     case .text(let delta):
-                        generation?.text += delta
+                        stream.append(delta)
                     case .finished(let stats):
                         finalStats = stats
                     }
@@ -257,7 +257,7 @@ extension AppState {
             }
             if Task.isCancelled || finalStats?.stopReason == "用户停止" { cancelled = true }
 
-            let addition = generation?.text ?? ""
+            let addition = stream.text
             let outcome = ReplyContinuation.finalize(base: original.content, addition: addition, speakerName: speaker.name)
             let stopReason = streamError.map { "出错：\($0.localizedDescription)" }
                 ?? (cancelled ? "用户停止" : (finalStats?.stopReason ?? "未知"))
@@ -353,7 +353,7 @@ extension AppState {
         } else {
             generation?.purpose = .summary
             generation?.speakerName = "记忆整理"
-            generation?.text = ""
+            stream.reset()
         }
         defer { if ownsGeneration { generation = nil } }
 
@@ -372,7 +372,7 @@ extension AppState {
             for try await event in engine.generate(request) {
                 if case .text(let delta) = event {
                     output += delta
-                    generation?.text = output
+                    stream.append(delta)
                 }
             }
             let parsed = Summarizer.parse(output)

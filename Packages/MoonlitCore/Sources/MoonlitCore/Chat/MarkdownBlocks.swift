@@ -30,6 +30,33 @@ public enum MarkdownParser {
         return result
     }
 
+    /// 流式显示用：把正在生成的文字切成「写完的段落」和「还在写的最后一段」。
+    /// 只在空行处切，且前半段不能落在代码块或 <details> 折叠段里，这样两半各自分块，
+    /// 和整段一起分块的结果相同。前半段在之后的生成里不再变化，界面不用每次重排。
+    public static func streamingSplit(_ text: String) -> (settled: String, tail: String) {
+        var searchEnd = text.endIndex
+        for _ in 0..<20 {
+            guard let r = text.range(of: "\n\n", options: .backwards, range: text.startIndex..<searchEnd) else { break }
+            let head = text[..<r.lowerBound]
+            if isClosedForSplit(head) {
+                return (String(head), String(text[r.upperBound...]))
+            }
+            searchEnd = r.lowerBound
+        }
+        return ("", text)
+    }
+
+    private static func isClosedForSplit(_ head: Substring) -> Bool {
+        var fences = 0
+        for line in head.split(separator: "\n", omittingEmptySubsequences: false)
+        where line.trimmingCharacters(in: .whitespaces).hasPrefix("```") {
+            fences += 1
+        }
+        guard fences % 2 == 0 else { return false }
+        let lower = head.lowercased()
+        return lower.components(separatedBy: "<details").count == lower.components(separatedBy: "</details>").count
+    }
+
     static func markdownBlocks(_ text: String) -> [MarkdownBlock] {
         var result: [MarkdownBlock] = []
         var paragraph: [String] = []

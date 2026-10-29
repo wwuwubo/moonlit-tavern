@@ -231,6 +231,25 @@ final class PersonaAndContinuationTests: XCTestCase {
         XCTAssertEqual(blocks.last, .details(summary: "状态", blocks: [.paragraph("生成到一半")]))
     }
 
+    func testStreamingSplitKeepsBlocksIdentical() {
+        let samples = [
+            "「滚开！」\n\n*她猛地推开对方。*\n\n「续费？」她的声音",
+            "第一段\n第一段第二行\n\n- 列表\n\n```\n代码\n\n还在代码里\n```\n\n尾巴",
+            "开头\n\n<details><summary>状态</summary>\n\n生成到一半",
+            "只有一段，还没换行",
+            "结尾刚好是空行\n\n"
+        ]
+        for text in samples {
+            let parts = MarkdownParser.streamingSplit(text)
+            XCTAssertEqual(MarkdownParser.blocks(parts.settled) + MarkdownParser.blocks(parts.tail), MarkdownParser.blocks(text), text)
+        }
+        XCTAssertEqual(MarkdownParser.streamingSplit("「滚开！」\n\n*她推开对方。*\n\n「续费").tail, "「续费")
+        XCTAssertEqual(MarkdownParser.streamingSplit("开头\n\n```\n代码\n\n还在写").settled, "开头", "不在代码块中间切开")
+        XCTAssertEqual(MarkdownParser.streamingSplit("开头\n\n<details><summary>状态</summary>\n\n生成到一半").settled, "开头",
+                       "不在折叠段中间切开")
+        XCTAssertEqual(MarkdownParser.streamingSplit("只有一段").settled, "")
+    }
+
     func testStripTagsKeepsTextAndCode() {
         XCTAssertEqual(HTMLLite.stripTags("第一行<br>第二行<br/>第三行"), "第一行\n第二行\n第三行")
         XCTAssertEqual(HTMLLite.stripTags("<span style=\"color:red\">红字</span>"), "红字")

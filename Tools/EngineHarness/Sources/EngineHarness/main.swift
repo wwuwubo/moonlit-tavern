@@ -187,7 +187,10 @@ chat.append(ChatMessage(role: .user, speakerName: "旅人", content: "我想要�
 
 let plan1 = plan(for: chat, characters: [erin], speaker: erin)
 log("\n提示词组装：系统 \(plan1.report.systemTokens) tok，世界书 \(plan1.report.loreTokens) tok（激活 \(plan1.lore.included.map(\.entry.title).joined(separator: "、"))），历史 \(plan1.report.historyTokens) tok")
-let req1 = GenerationRequest(messages: plan1.messages, prefill: plan1.prefill, sampling: sampling, maxNewTokens: 160, stopSequences: plan1.stopSequences)
+/// 与 App 一致：末尾的提醒只用一次，在它前面存检查点
+func stable(_ p: PromptPlan) -> Int? { p.tailCount > 0 ? p.messages.count - p.tailCount : nil }
+let req1 = GenerationRequest(messages: plan1.messages, prefill: plan1.prefill, sampling: sampling, maxNewTokens: 160, stopSequences: plan1.stopSequences,
+                             stableMessageCount: stable(plan1))
 let (reply1, stats1, err1) = await generate("单人角色扮演 · 第一轮", req1)
 check("单人角色扮演：生成成功", err1 == nil && (stats1?.generatedTokens ?? 0) > 0 && !reply1.isBlank, "生成 \(stats1?.generatedTokens ?? 0) tok")
 cleanOutputChecks("第一轮", reply1)
@@ -198,9 +201,14 @@ let content1 = ResponseSanitizer.clean(reply1, speakerName: erin.name)
 chat.append(ChatMessage(role: .assistant, speakerID: erin.id, speakerName: erin.name, content: content1))
 chat.append(ChatMessage(role: .user, speakerName: "旅人", content: "钟楼那边晚上会有什么动静吗？"))
 let plan2 = plan(for: chat, characters: [erin], speaker: erin)
-let req2 = GenerationRequest(messages: plan2.messages, prefill: plan2.prefill, sampling: sampling, maxNewTokens: 160, stopSequences: plan2.stopSequences)
+let req2 = GenerationRequest(messages: plan2.messages, prefill: plan2.prefill, sampling: sampling, maxNewTokens: 160, stopSequences: plan2.stopSequences,
+                             minNewTokens: 64, stableMessageCount: stable(plan2))
 let (reply2, stats2, err2) = await generate("单人角色扮演 · 第二轮", req2)
 check("第二轮：生成成功", err2 == nil && (stats2?.generatedTokens ?? 0) > 0, "生成 \(stats2?.generatedTokens ?? 0) tok")
+if let s = stats2 {
+    check("写够长度：64 token 之前不收尾", s.generatedTokens >= 64 || s.stopReason == "停止词", critical: false,
+          "生成 \(s.generatedTokens) tok，停止原因 \(s.stopReason)")
+}
 cleanOutputChecks("第二轮", reply2)
 if let s = stats2 {
     let reused = s.promptTokens - s.promptTokensEvaluated
@@ -235,7 +243,8 @@ if let s = statsOpt {
 var chatNext = chatOpt
 chatNext.append(ChatMessage(role: .user, speakerName: "旅人", content: options.first ?? "那就要那间房。"))
 let planNext = plan(for: chatNext, characters: [erin], speaker: erin)
-let reqNext = GenerationRequest(messages: planNext.messages, prefill: planNext.prefill, sampling: sampling, maxNewTokens: 120, stopSequences: planNext.stopSequences)
+let reqNext = GenerationRequest(messages: planNext.messages, prefill: planNext.prefill, sampling: sampling, maxNewTokens: 120, stopSequences: planNext.stopSequences,
+                                stableMessageCount: stable(planNext))
 let (replyNext, statsNext, errNext) = await generate("选了选项之后的下一轮", reqNext)
 check("选项之后的下一轮：生成成功", errNext == nil && !replyNext.isBlank, "生成 \(statsNext?.generatedTokens ?? 0) tok")
 if let s = statsNext {
@@ -249,7 +258,8 @@ chatCont.append(ChatMessage(role: .assistant, speakerID: erin.id, speakerName: e
                             content: ResponseSanitizer.clean(replyNext, speakerName: erin.name)))
 chatCont.append(ChatMessage(role: .user, speakerName: "旅人", content: "给我讲讲这座镇子的来历吧，越详细越好。"))
 let planCut = plan(for: chatCont, characters: [erin], speaker: erin)
-let reqCut = GenerationRequest(messages: planCut.messages, prefill: planCut.prefill, sampling: sampling, maxNewTokens: 24, stopSequences: planCut.stopSequences)
+let reqCut = GenerationRequest(messages: planCut.messages, prefill: planCut.prefill, sampling: sampling, maxNewTokens: 24, stopSequences: planCut.stopSequences,
+                               stableMessageCount: stable(planCut))
 let (replyCut, statsCut, errCut) = await generate("继续 · 先截断在 24 token", reqCut)
 let baseCut = ReplyFinalizer.finalize(visible: replyCut, speakerName: erin.name).content
 check("继续：截断的回复停在长度上限", errCut == nil && statsCut?.stopReason == "长度上限", critical: false,

@@ -186,7 +186,7 @@ jobs:
           cp artifacts/uitest-log/uitest-steps.txt artifacts/ios-build/uitest-steps.txt 2>/dev/null || \
             cp artifacts/uitest-log/screenshots/uitest-steps.txt artifacts/ios-build/uitest-steps.txt 2>/dev/null || true
           cat > notes.md <<EOF
-          自动构建 #${{ github.run_number }}（版本 0.3.1，构建号 ${{ github.run_number }}，提交 ${SHORT_SHA}），Xcode 27 / iOS 27 SDK。
+          自动构建 #${{ github.run_number }}（版本 0.3.2，构建号 ${{ github.run_number }}，提交 ${SHORT_SHA}），Xcode 27 / iOS 27 SDK。
           单元测试、真机构建与 IPA 结构检查、iPad 模拟器端到端 UI 测试均已通过。
 
           - **MoonlitTavern-unsigned.ipa**：iphoneos Release 构建，**未签名**。需要先用全能签（或其他签名工具）配合你自己的证书与描述文件签名后再安装。
